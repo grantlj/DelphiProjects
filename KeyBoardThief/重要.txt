@@ -1,0 +1,4 @@
+WH_KEYBOARD_LL钩子。KeyboardHookProc函数的各个参数意义如下：
+ 　　　　nCode　　　　消息的类型，有HC_ACTION
+　　　　wParam　　　　按键的状态（按下或弹起）WM_KEYDOWN、WM_KEYUP、WM_SYSKEYDOWN、WM_SYSKEYUP
+　　　　lParam　　　　指向KeyboardHookStruct结构的指针，该结构包含了按键的详细信息。　　　　　

@@ -1,0 +1,72 @@
+library WeatherMou;
+uses
+  SysUtils,
+  Classes,
+  urlmon;
+type
+  TWeatherRec=record
+    bool:boolean;
+    Wea,temp,wind:widestring;
+  end;
+
+const
+  Ver=1000;
+{$R *.res}
+
+function GetWeather(Province,City:widestring):TweatherRec;
+var
+  f1:textfile;
+  bool:boolean;
+  x,url:string;
+  p1,p2:integer;
+  TmpSavePath:string;
+  WeatherRec:TWeatherRec;
+begin
+  url:='http://qq.ip138.com/weather/'+Province+'/'+city+'.htm';
+  WeatherRec.bool:=false;
+  TmpSavePath:='c:\WeatherTmp.htm';
+  bool:=urldownloadtofile(nil,pchar(url),pchar(TmpSavePath),0,nil)=0;
+  if bool=false then beep;
+  if not((bool=false) or (not(fileexists(TmpSavePath)))) then
+   begin
+     assignfile(f1,TmpSavePath);
+     reset(f1);
+     while pos('<td align="center">天气</td>',x)=0 do
+      readln(f1,x);
+     readln(f1,x);
+     p1:=pos('<br/>',x);
+     p2:=pos('</td>',x);
+     WeatherRec.wea:=copy(x,p1+5,p2-p1-5)+' ';
+
+     while pos('<td align="center">气温</td>',x)=0 do
+       readln(f1,x);
+     readln(f1,x);
+     p1:=pos('<td>',x);
+     p2:=pos('</td>',x);
+     WeatherRec.temp:=copy(x,p1+4,p2-p1-4)+' ';
+
+    while pos('<td align="center">风向</td>',x)=0 do
+       readln(f1,x);
+     readln(f1,x);
+     p1:=pos('<td>',x);
+     p2:=pos('</td>',x);
+     WeatherRec.wind:=copy(x,p1+4,p2-p1-4);
+     closefile(f1);
+     deletefile(TmpSavePath);
+     WeatherRec.bool:=true;
+
+  end;
+  result:=WeatherRec;
+end;
+
+function GetDllVer:integer;
+begin
+  result:=Ver;
+end;
+
+exports
+  GetDllVer,
+  GetWeather;
+
+begin
+end.

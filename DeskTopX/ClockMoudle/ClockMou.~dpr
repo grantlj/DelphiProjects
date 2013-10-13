@@ -1,0 +1,46 @@
+library ClockMou;
+
+
+uses
+  SysUtils,
+  Classes,
+  mmsystem;
+
+
+const
+  ver=1000;
+var
+  HourSave:integer;
+{$R *.res}
+
+function GetDate:widestring;
+begin
+  result:=formatdatetime('yyyy-mm-dd',now);
+end;
+
+function GetTime:widestring;
+var
+  hh,mm,ss:integer;
+begin
+  hh:=strtoint(formatdatetime('hh',now));
+  mm:=strtoint(copy(formatdatetime('hh:mm:ss',now),4,2));
+  ss:=strtoint(formatdatetime('ss',now));
+  if (mm=0) and (hh<>HourSave) then
+    begin
+      HourSave:=hh;
+      playsound(pchar('wav\'+inttostr(hh)+'.wav'),0,1);
+    end;
+ result:=formatdatetime('hh:mm:ss',now);
+end;
+
+function GetDllVer:integer;
+begin
+  result:=ver;
+end;
+
+exports
+  GetDate,GetTime,GetDllVer;
+
+begin
+  HourSave:=-1;
+end.

@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <Transactions>
+    <Transaction>2013/07/03 13:12:02.162.pas,F:\DeskTopX\Unit5.pas=F:\DeskTopX\Alarm.pas</Transaction>
+    <Transaction>2013/07/03 13:12:02.162.dfm,F:\DeskTopX\Unit5.dfm=F:\DeskTopX\Alarm.dfm</Transaction>
+    <Transaction>2013/07/03 13:16:23.904.pas,F:\DeskTopX\Alarm.pas=F:\DeskTopX\Works.pas</Transaction>
+    <Transaction>2013/07/03 13:16:23.904.dfm,F:\DeskTopX\Alarm.dfm=F:\DeskTopX\Works.dfm</Transaction>
+    <Transaction>2013/07/03 13:21:27.943.pas,F:\DeskTopX\Works.pas=F:\DeskTopX\Memo.pas</Transaction>
+    <Transaction>2013/07/03 13:21:27.943.dfm,F:\DeskTopX\Works.dfm=F:\DeskTopX\Memo.dfm</Transaction>
+  </Transactions>
+</BorlandProject>

@@ -1,0 +1,39 @@
+library StockMou;
+
+
+uses
+  urlmon,
+  SysUtils,
+  Classes;
+const
+  ver=1010;
+{$R *.res}
+function GetSHStockGIF:boolean;
+var
+  bool:boolean;
+begin
+  bool:=urldownloadtofile(nil,pchar('http://image.sinajs.cn/newchart/min/n/sh000001.gif'),pchar('sh.gif'),0,nil)=0;
+  if fileexists('sh.gif') and (bool=true) then result:=true
+                                           else begin beep; result:=false;end;
+end;
+
+function GetSZStockGIF:boolean;
+var
+  bool:boolean;
+begin
+  bool:=urldownloadtofile(nil,pchar('http://image.sinajs.cn/newchart/min/n/sz399001.gif'),pchar('sz.gif'),0,nil)=0;
+  if fileexists('sh.gif') and (bool=true) then result:=true
+                                           else begin beep;result:=false;end;
+end;
+
+function GetDllVer:integer;
+begin
+  result:=ver;
+end;
+
+exports
+  GetDllVer,
+  GetSHStockGIF,
+  GetSZStockGIF;
+begin
+end.

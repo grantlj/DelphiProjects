@@ -1,0 +1,200 @@
+{Module Name:setting
+
+Author:Grant Liu
+
+This is the setting form of DesktopX.
+
+History:
+Build1100: 2012-8-26
+
+}
+
+
+unit setting;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls,inifiles,shellapi;
+
+type
+  TSetting=record
+    WeaInterval:integer;
+    province,city:widestring;
+    stockinterval:integer;
+    autoupdate:0..1;
+  end;
+
+  TForm4 = class(TForm)
+    GroupBox1: TGroupBox;
+    Label1: TLabel;
+    Label2: TLabel;
+    GroupBox2: TGroupBox;
+    Label3: TLabel;
+    Edit1: TEdit;
+    Label4: TLabel;
+    GroupBox3: TGroupBox;
+    Label5: TLabel;
+    Edit2: TEdit;
+    Label6: TLabel;
+    CheckBox1: TCheckBox;
+    Button2: TButton;
+    Label7: TLabel;
+    Edit3: TEdit;
+    Label8: TLabel;
+    Edit4: TEdit;
+    Label9: TLabel;
+    Label10: TLabel;
+    GroupBox4: TGroupBox;
+    Label11: TLabel;
+    Edit5: TEdit;
+    Edit6: TEdit;
+    Label12: TLabel;
+    CheckBox2: TCheckBox;
+    procedure Button2Click(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure Edit1KeyPress(Sender: TObject; var Key: Char);
+    procedure Edit2KeyPress(Sender: TObject; var Key: Char);
+    procedure Edit4KeyPress(Sender: TObject; var Key: Char);
+    procedure Edit3KeyPress(Sender: TObject; var Key: Char);
+
+    procedure CheckBox2Click(Sender: TObject);
+    procedure Edit6KeyPress(Sender: TObject; var Key: Char);
+   
+    procedure Edit5KeyPress(Sender: TObject; var Key: Char);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form4: TForm4;
+  Edit1Org,Edit2Org,Edit3Org,Edit4Org,edit5org,edit6org:string;
+  checkbox1Org,checkbox2org:boolean;
+
+implementation
+
+uses main;
+
+{$R *.dfm}
+
+//Save New setting information if needed.
+procedure TForm4.Button2Click(Sender: TObject);
+var
+  ini:tinifile;
+begin
+  ini:=tinifile.Create(extractfilepath(paramstr(0))+'setting.ini');
+  if checkbox1.Checked then ini.writebool('System','AutoStart',true)
+                       else ini.Writebool('System','AutoStart',False);
+  ini.writeinteger('Weather','WeatherInterval',strtoint(edit1.text));
+  ini.writestring('Weather','Province',edit3.text);
+  ini.writestring('Weather','City',edit4.text);
+  ini.writeinteger('Stock','StockInterval',strtoint(edit2.text));
+  if checkbox2.Checked then ini.writebool('Clock','CBeepEna',true)
+                       else ini.Writebool('Clock','CBeepEna',False);
+  ini.writeinteger('Clock','CBeepStart',strtoint(edit5.text));
+  ini.writeinteger('Clock','CBeepEnd',strtoint(edit6.text));
+  ini.destroy;
+  
+  if (edit1.text<>edit1org) or (edit2.text<>edit2org) or
+    (edit3.text<>edit3org) or
+     (edit4.text<>edit4org) or (checkbox1.checked<>checkbox1org)
+     or (checkbox2.checked<>checkbox2org) or (edit5.Text<>edit5org)
+     or (edit6.text<>edit6org) then
+    begin
+      //Reload program everytime when settings are changed.
+      showmessage('您已经更改您的部分设置，程序将重新启动!');
+      Application.Terminate;
+      ShellExecute(Handle,'Open',Pchar(Application.ExeName),nil,nil,SW_SHOWNORMAL);
+    end
+  else
+    begin
+     form4.hide;
+     form1.show;
+    end;
+end;
+
+procedure TForm4.FormShow(Sender: TObject);
+begin
+  //Get settings from DXMain.
+  edit1.Text:=inttostr(form1.Timer2org div 60 div 1000);
+  edit1Org:=edit1.text;
+  edit2.text:=inttostr(form1.Timer3org div 1000);
+  edit2Org:=edit2.text;
+  edit3.text:=form1.province;
+  edit3Org:=edit3.text;
+  edit4.text:=form1.city;
+  Edit4Org:=edit4.text;
+  edit5.text:=inttostr(form1.CBeepStart);
+  edit5Org:=edit5.text;
+  edit6.text:=inttostr(form1.CBeepEnd);
+  edit6Org:=edit6.text;
+
+  checkbox1.checked:=form1.AutoStart;
+  Checkbox1org:=checkbox1.checked;
+
+  checkbox2.checked:=form1.CBeepEna;
+  checkbox2org:=checkbox2.checked;
+
+  if checkbox2.checked then begin
+    edit5.enabled:=true;
+    edit6.enabled:=true;
+  end
+ else
+   begin
+    edit5.enabled:=false;
+    edit6.enabled:=false;
+   end;
+   
+end;
+
+procedure TForm4.Edit1KeyPress(Sender: TObject; var Key: Char);
+begin
+      if not(key in['0'..'9',#8])then key:=#0;
+end;
+
+procedure TForm4.Edit2KeyPress(Sender: TObject; var Key: Char);
+begin
+     if not(key in['0'..'9',#8])then key:=#0; 
+end;
+
+procedure TForm4.Edit4KeyPress(Sender: TObject; var Key: Char);
+begin
+    if not(key in['A'..'Z','a'..'z',#8])then key:=#0;
+end;
+
+procedure TForm4.Edit3KeyPress(Sender: TObject; var Key: Char);
+begin
+   if not(key in['A'..'Z','a'..'z',#8])then key:=#0;
+end;
+
+
+procedure TForm4.CheckBox2Click(Sender: TObject);
+begin
+ if checkbox2.checked then begin
+    edit5.enabled:=true;
+    edit6.enabled:=true;
+  end
+ else
+   begin
+    edit5.enabled:=false;
+    edit6.enabled:=false;
+   end;
+
+end;
+
+procedure TForm4.Edit6KeyPress(Sender: TObject; var Key: Char);
+begin
+   if not(key in['0'..'9',#8])then key:=#0;
+end;
+
+
+
+procedure TForm4.Edit5KeyPress(Sender: TObject; var Key: Char);
+begin
+     if not(key in['0'..'9',#8])then key:=#0;
+end;
+
+end.

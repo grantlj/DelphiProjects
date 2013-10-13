@@ -1,0 +1,396 @@
+unit main;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ExtCtrls,gifimage,SHBIG,inifiles,setting,registry,shellapi;
+
+type
+  TForm1 = class(TForm)
+    GroupBox1: TGroupBox;
+    Label1: TLabel;
+    Label2: TLabel;
+    GroupBox2: TGroupBox;
+    Label3: TLabel;
+    Label4: TLabel;
+    Label5: TLabel;
+    GroupBox3: TGroupBox;
+    Button3: TButton;
+    Button4: TButton;
+    Timer1: TTimer;
+    Timer2: TTimer;
+    Image1: TImage;
+    Timer3: TTimer;
+    Image2: TImage;
+    Image3: TImage;
+    Image4: TImage;
+    Image5: TImage;
+    Edit1: TEdit;
+    Image6: TImage;
+    procedure Button4Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
+    procedure Timer2Timer(Sender: TObject);
+    procedure Timer3Timer(Sender: TObject);
+    procedure Image1Click(Sender: TObject);
+    procedure Image2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+    procedure Image4Click(Sender: TObject);
+    procedure Image5Click(Sender: TObject);
+    procedure Image6Click(Sender: TObject);
+
+
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    province,city:widestring;
+    CBeepStart,CBeepEnd:integer;
+    AutoStart,CBeepEna:boolean;
+  end;
+
+var
+  Form1: TForm1;
+  ClockH,WeatherH,StockH:cardinal;
+  SHBIGEna,SZBigEna,AutoUpdate:boolean;
+  GScount:int64;
+  Province,City:widestring;
+  CBeepStart,CBeepEnd:integer;
+
+implementation
+
+uses SZBIG;
+
+{$R *.dfm}
+procedure GW;
+type
+  TWeatherRec=record
+    bool:boolean;
+    Wea,temp,wind:widestring;
+  end;
+  TMGetWeather=function(Province,City:widestring):TWeatherRec;
+var
+  MGetWeather:TMGetWeather;
+  WeatherRec:TWeatherRec;
+  fbitmap:tbitmap;
+begin
+  @MGetWeather:=GetProcaddress(WeatherH,pchar('GetWeather'));
+  WeatherRec:=MGetWeather(Province,City);
+  if WeatherRec.bool=true then
+    begin
+      form1.label3.Visible:=true;form1.Label4.Visible:=true;form1.Label5.visible:=true;
+      form1.Image3.Visible:=false;
+      form1.label3.Caption:=WeatherRec.Wea;
+      form1.label4.Caption:=WeatherRec.temp;
+      form1.label5.Caption:=WeatherRec.wind;
+    end
+  Else
+    begin
+    form1.label3.Visible:=false;
+    form1.Label4.Visible:=false;
+    form1.Label5.visible:=false;
+    form1.Image3.visible:=true;
+    FBitmap:=TBitmap.Create;
+    fbitmap.LoadFromFile('WeaFail.bmp');
+    form1.Image3.Picture.Bitmap.Assign(FBitmap);
+    fbitmap.Free;
+    end;
+end;
+
+
+
+procedure GTD;
+type
+  TMGetDate=function:widestring;
+  TMGetTime=function(CBeepEna:boolean;CBeepStart,CBeepEnd:integer):widestring;
+var
+  MGetDate:TMGetDate;
+  MGetTime:TMGetTime;
+  MDate,MTime:widestring;
+begin
+  @MGetDate:=getprocaddress(ClockH,pchar('GetDate'));
+  @MGetTime:=getprocaddress(ClockH,'GetTime');
+  MDate:=MGetDate;
+  MTime:=MGetTime(form1.CBeepEna,form1.CBeepStart,form1.CBeepEnd);
+  form1.label1.Caption:=MDate;
+  form1.label2.Caption:=MTime;
+end;
+
+procedure GS;
+type
+  TMGetStockGIF=function:bool;
+var
+  MGetSHStockGIF,MGetSZStockGIF:TMGetStockGIF;
+  Fbitmap:tbitmap;
+  FGif:tgifimage;
+begin
+
+  inc(GSCount);
+  @MGetSHStockGIF:=getprocaddress(StockH,pchar('GetSHStockGIF'));
+  @MGetSZStockGIF:=getprocaddress(StockH,pchar('GetSZStockGIF'));
+
+  if MGetSHStockGIF then
+    begin
+      fgif:=tgifimage.Create;
+      fgif.LoadFromFile('sh.gif');
+      FBitmap:=TBitmap.Create;
+      FBitmap.Assign(FGif);
+      form1.Image1.Picture.Bitmap.Assign(FBitmap);
+      if form1.timer3.enabled=true then form2.Image1.Picture.Bitmap.Assign(FBitmap);
+      fbitmap.Free;
+      FGif.Free;
+      if GSCount>1 then SHBigEna:=true;
+
+    end
+  else
+    begin
+      SHBigEna:=false;
+      FBitmap:=TBitmap.Create;
+      fbitmap.LoadFromFile('SHFail.bmp');
+      form1.Image1.Picture.Bitmap.Assign(FBitmap);
+      fbitmap.Free;
+    end;
+
+  if MGetSZStockGIF then
+    begin
+      fgif:=tgifimage.Create;
+      fgif.LoadFromFile('sz.gif');
+      FBitmap:=TBitmap.Create;
+      FBitmap.Assign(FGif);
+      form1.Image2.Picture.Bitmap.Assign(FBitmap);
+      if form1.Timer3.enabled=true then form3.Image1.Picture.Bitmap.Assign(FBitmap);
+
+      fbitmap.Free;
+      FGif.Free;
+      if GScount>1 then SZBigEna:=true;
+    end
+  else
+    begin
+      SZBigEna:=false;
+      FBitmap:=TBitmap.Create;
+      fbitmap.LoadFromFile('SZFail.bmp');
+      form1.Image2.Picture.Bitmap.Assign(FBitmap);
+      fbitmap.Free;
+    end;
+end;
+
+
+
+procedure init;
+type
+  TMGetDllVer=function:integer;
+
+  TSetting=record
+    WeaInterval:integer;
+    province,city:widestring;
+    stockinterval:integer;
+    autoupdate:0..1;
+  end;
+
+var
+  MGetDllVer:TMGetDllVer;
+  handle:cardinal;
+  MoudleNum,i,ver:integer;
+  Moudle:array[1..5] of string;
+
+procedure addtostartup(exename,savepath:string);
+var
+  Reg:TRegistry;
+begin
+  Reg := TRegistry.Create;
+  with Reg do
+  Try
+    RootKey := HKEY_LOCAL_MACHINE;
+      if OpenKey('SOFTWARE\MicroSoft\Windows\CurrentVersion\Run',true) then
+        Reg.WriteString(exename,savepath);
+  finally
+    Reg.Free;
+  end;
+end;                                
+
+procedure removestartup(exename,savepath:string);
+var
+  Reg:TRegistry;
+begin
+  Reg := TRegistry.Create;
+  with Reg do
+  Try
+    RootKey := HKEY_LOCAL_MACHINE;
+      if OpenKey('SOFTWARE\MicroSoft\Windows\CurrentVersion\Run',true) then
+       Reg.DeleteValue(exename);
+  finally
+    Reg.Free;
+  end;
+end;
+
+procedure Getsetting;
+var
+  ini:tinifile;
+  int:integer;
+  str:widestring;
+  bool:boolean;
+begin
+  ini:=tinifile.Create(extractfilepath(paramstr(0))+'setting.ini');
+  try
+      int:=ini.ReadInteger('Weather','WeatherInterval',10);
+      form1.Timer2.Interval:=int*60*1000;
+
+      int:=ini.ReadInteger('Stock','StockInterval',30);
+      form1.Timer3.Interval:=int*1000;
+
+      str:=ini.ReadString('Weather','Province','jiangsu');
+      province:=str;
+      form1.province:=str;
+      str:=ini.readstring('Weather','City','nanjing');
+      city:=str;
+      form1.city:=str;
+
+      bool:=ini.readbool('Clock','CBeepEna',true);
+      form1.CBeepEna:=bool;
+
+      int:=ini.readinteger('Clock','CBeepStart',8);
+      CBeepStart:=int;
+      form1.CBeepStart:=int;
+
+      int:=ini.ReadInteger('Clock','CBeepEnd',22);
+      CBeepEnd:=int;
+      form1.CBeepEnd:=int;
+
+      bool:=ini.ReadBool('System','AutoStart',true);
+      form1.AutoStart:=bool;
+      if bool=true then
+        begin
+          addtostartup('DesktopX',application.exename);
+        end
+      else
+        begin
+          try
+            removestartup('DesktopX',application.exename);
+          except
+          end;
+        end;
+     ini.Free;
+
+  except
+    showmessage('未找到程序配置文件，请尝试重新安装本程序！');
+    halt;
+  end;
+end;
+
+
+
+
+begin
+  GetSetting;
+  MoudleNum:=3;
+  Moudle[1]:='ClockMou.dll';
+  Moudle[2]:='WeatherMou.dll';
+  Moudle[3]:='StockMou.dll';
+  for i:=1 to MoudleNum do
+    begin
+      handle:=loadlibrary(pchar(moudle[i]));
+      @MGetDLLVer:=getprocaddress(handle,'GetDllVer');
+      ver:=MGetDllVer;
+      FreeLibrary(handle);
+    end;
+
+  form1.GroupBox2.caption:='天气:'+province+' '+city;
+
+  ClockH:=Loadlibrary(pchar('ClockMou.dll'));
+  WeatherH:=Loadlibrary(pchar('WeatherMou.dll'));
+  StockH:=LoadLibrary(pchar('StockMou.dll'));
+  GTD;
+  GW;
+  GSCount:=0;
+  GS;
+  form1.Timer1.Enabled:=true;
+  form1.Timer2.Enabled:=true;
+  form1.Timer3.Enabled:=true;
+
+end;
+
+procedure TForm1.Button4Click(Sender: TObject);
+begin
+  halt;
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  init;
+end;
+
+procedure TForm1.Timer1Timer(Sender: TObject);
+begin
+  GTD;
+end;
+
+
+
+procedure TForm1.Timer2Timer(Sender: TObject);
+begin
+  GW;
+end;
+
+
+procedure TForm1.Timer3Timer(Sender: TObject);
+begin
+  GS;
+end;
+
+
+procedure TForm1.Image1Click(Sender: TObject);
+begin
+  if (SHBigEna=true) then
+   begin
+  form1.hide;
+  form2.show;
+  end;
+end;
+
+procedure TForm1.Image2Click(Sender: TObject);
+begin
+  if (SZBigEna=true) then
+  begin
+  form1.Hide;
+  form3.show;
+  end;
+end;
+
+procedure TForm1.Button3Click(Sender: TObject);
+begin
+  form4.Show;
+  form1.Hide;
+end;
+
+procedure TForm1.Image4Click(Sender: TObject);
+begin
+  winexec(pchar('shutdown -s -t 0'),sw_hide);
+end;
+
+procedure TForm1.Image5Click(Sender: TObject);
+begin
+  winexec('shutdown -r -t 0',sw_hide);
+end;
+
+procedure TForm1.Image6Click(Sender: TObject);
+var
+  s1,s2,url:string;
+  p:boolean;
+  i:integer;
+begin
+  s2:='';
+  s1:=edit1.text;
+  p:=false;
+  for i:=1 to length(s1) do
+    begin
+      if (s1[i]=' ') then
+          if p=false then begin s2:=s2+'+';p:=true;end;
+      if s1[i]<>' ' then begin p:=false;s2:=s2+s1[i];end;
+    end;
+  url:='http://baidu.com/s?wd='+s2;
+  edit1.text:='';
+  ShellExecute(0,nil,pchar(url),nil,nil,1);
+end;
+
+end.

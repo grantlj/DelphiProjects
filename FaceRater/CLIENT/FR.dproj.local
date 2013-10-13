@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2013/08/12 20:28:51.360.pas,C:\Users\Grant\Documents\RAD Studio\Projects\Unit2.pas=E:\FaceRater\main.pas</Transaction>
+    <Transaction>2013/08/12 20:28:51.360.dfm,C:\Users\Grant\Documents\RAD Studio\Projects\Unit2.dfm=E:\FaceRater\main.dfm</Transaction>
+    <Transaction>2013/08/12 20:28:55.940.dproj,C:\Users\Grant\Documents\RAD Studio\Projects\Project2.dproj=E:\FaceRater\FR.dproj</Transaction>
+    <Transaction>2013/08/13 12:57:41.605.pas,E:\FaceRater\Unit1.pas=E:\FaceRater\top.pas</Transaction>
+    <Transaction>2013/08/13 12:57:41.605.dfm,E:\FaceRater\Unit1.dfm=E:\FaceRater\top.dfm</Transaction>
+  </Transactions>
+</BorlandProject>
