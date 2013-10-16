@@ -1,0 +1,55 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  BorderStyle = bsSizeToolWin
+  Caption = 'Form1'
+  ClientHeight = 615
+  ClientWidth = 360
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Orientations = [soPortrait, soLandscape, soInvertedPortrait, soInvertedLandscape]
+  FormFactor.Devices = [dkDesktop]
+  OnCreate = FormCreate
+  Touch.InteractiveGestures = [igZoom, igPan, igRotate, igTwoFingerTap, igPressAndtap, igLongTap, igDoubleTap]
+  DesignerMobile = True
+  DesignerWidth = 360
+  DesignerHeight = 640
+  DesignerDeviceName = 'Samsung Galaxy S4'
+  DesignerOrientation = 0
+  DesignerOSVersion = ''
+  object Button1: TButton
+    Height = 41.000000000000000000
+    Position.X = 304.000000000000000000
+    Position.Y = 8.000000000000000000
+    TabOrder = 0
+    Text = 'GO'
+    Trimming = ttCharacter
+    Width = 41.000000000000000000
+    OnClick = Button1Click
+  end
+  object WebBrowser1: TWebBrowser
+    Height = 481.000000000000000000
+    Position.X = 16.000000000000000000
+    Position.Y = 56.000000000000000000
+    Width = 329.000000000000000000
+  end
+  object Edit1: TEdit
+    Touch.InteractiveGestures = [igLongTap, igDoubleTap]
+    TabOrder = 2
+    Position.X = 16.000000000000000000
+    Position.Y = 16.000000000000000000
+    Width = 289.000000000000000000
+    Height = 32.000000000000000000
+    KillFocusByReturn = False
+  end
+  object Button2: TButton
+    Height = 33.000000000000000000
+    Position.X = 16.000000000000000000
+    Position.Y = 536.000000000000000000
+    TabOrder = 3
+    Text = 'Exit'
+    Trimming = ttCharacter
+    Width = 329.000000000000000000
+    OnClick = Button2Click
+  end
+end

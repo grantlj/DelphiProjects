@@ -13101,14 +13101,6 @@ object Form1: TForm1
       Width = 100
       Height = 100
     end
-    object Panel1: TPanel
-      Left = 232
-      Top = 64
-      Width = 185
-      Height = 41
-      Caption = 'Panel1'
-      TabOrder = 0
-    end
   end
   object GroupBox2: TGroupBox
     Left = 8
@@ -13235,8 +13227,8 @@ object Form1: TForm1
     TabOrder = 0
   end
   object Button1: TButton
-    Left = 224
-    Top = 256
+    Left = 226
+    Top = 257
     Width = 185
     Height = 33
     Caption = #31649#29702#20415#31614

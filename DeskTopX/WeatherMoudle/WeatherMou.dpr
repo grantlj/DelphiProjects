@@ -6,19 +6,17 @@ This is the Weather Service DLL of DesktopX.
 
 History:
 Build1100: 2012-8-26
+Bulid1201: 2013-10-16           *Repair the error when DesktopX doesent run
+                                 with admin privilege.
 
 }
-
-
-
-
-
 library WeatherMou;
 uses
   wininet,
   SysUtils,
   Classes,
   urlmon;
+
 type
   TWeatherRec=record
     bool:boolean;
@@ -26,7 +24,7 @@ type
   end;
 
 const
-  Ver=1100;
+  Ver=1201;
 {$R *.res}
 
 //GET WEATHER FORM IP138.
@@ -49,7 +47,7 @@ begin
   else url:='http://qq.ip138.com/weather/'+Province+'/'+city+'.htm';
   deleteurlcacheentry(pchar(url));
   WeatherRec.bool:=false;
-  TmpSavePath:='c:\WeatherTmp.htm';
+  TmpSavePath:='WeatherTmp.htm';
   bool:=urldownloadtofile(nil,pchar(url),pchar(TmpSavePath),0,nil)=0;
   if not((bool=false) or (not(fileexists(TmpSavePath)))) then
    begin
@@ -94,3 +92,4 @@ exports
 
 begin
 end.
+

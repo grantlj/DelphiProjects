@@ -1,2 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<BorlandProject/>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2013/10/14 21:04:40.000.001,=C:\Users\Grant\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2013/10/16 17:26:18.082,D:\DELPHI工程\DeskTopX\WeatherMoudle\WeatherMou.dproj=C:\Users\Grant\Documents\RAD Studio\Projects\Project1.dproj</Transaction>
+  </Transactions>
+</BorlandProject>

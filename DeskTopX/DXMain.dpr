@@ -5,7 +5,6 @@ uses
   windows,
   Forms,
   main in 'main.pas' {Form1},
-  GIFImage in 'TGIFImage.v.2.2.D7\GIFImage.pas',
   SHBIG in 'SHBIG.pas' {Form2},
   SZBIG in 'SZBIG.pas' {Form3},
   setting in 'setting.pas' {Form4},

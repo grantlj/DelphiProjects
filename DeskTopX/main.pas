@@ -12,7 +12,9 @@ Build1151: 2012-9-9                        *Add Week-Display function.
                                            *Repair a bug in News-Display.
 Build1101: 2012-9-4                        *Fix a bug in GS.
 Build1100: 2012-8-26
-
+Build1201: 2013-10-16                      *Rebuild with DELPHI XE5.
+                                           *Dont need Administrator Privilege
+                                            anymore.
 }
 unit main;
 
@@ -20,8 +22,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls,gifimage,SHBIG,inifiles,setting,registry,shellapi,
-  jpeg, Menus,dateutils,Memo;
+  Dialogs, StdCtrls, ExtCtrls,SHBIG,inifiles,setting,registry,shellapi,
+  jpeg, Menus,dateutils,Memo,GIFImg;
 
 type
   TForm1 = class(TForm)
@@ -63,7 +65,6 @@ type
     Timer4: TTimer;
     Image15: TImage;
     Button1: TButton;
-    Panel1: TPanel;
     procedure Button4Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -147,12 +148,12 @@ end;
 //Quick Restrat and Shutdown function here. Use winexec to run command.
 procedure TForm1.N2Click(Sender: TObject);
 begin
-   winexec(pchar('shutdown -r -t 0'),sw_hide);
+   winexec(pansichar('shutdown -r -t 0'),sw_hide);
 end;
 
 procedure TForm1.N3Click(Sender: TObject);
 begin
-   winexec(pchar('shutdown -s -t 0'),sw_hide);
+   winexec(pansichar('shutdown -s -t 0'),sw_hide);
 end;
 
 //======================================================
@@ -638,12 +639,12 @@ end;
 //Quick Restart and SHUTDOWN.
 procedure TForm1.Image4Click(Sender: TObject);
 begin
-  winexec(pchar('shutdown -s -t 0'),sw_hide);
+  winexec(pansichar('shutdown -s -t 0'),sw_hide);
 end;
 
 procedure TForm1.Image5Click(Sender: TObject);
 begin
-  winexec('shutdown -r -t 0',sw_hide);
+  winexec(pansichar('shutdown -r -t 0'),sw_hide);
 end;
 
 //Quick Search function.
