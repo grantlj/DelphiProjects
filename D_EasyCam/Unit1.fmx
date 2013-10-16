@@ -1,0 +1,66 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 615
+  ClientWidth = 360
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [dkDesktop]
+  DesignerMobile = True
+  DesignerWidth = 360
+  DesignerHeight = 640
+  DesignerDeviceName = 'Samsung Galaxy S4'
+  DesignerOrientation = 0
+  DesignerOSVersion = ''
+  object ToolBar1: TToolBar
+    Height = 48.000000000000000000
+    TabOrder = 0
+    Width = 360.000000000000000000
+    object Button1: TButton
+      Action = TakePhotoFromCameraAction1
+      Align = alClient
+      Height = 48.000000000000000000
+      StyleLookup = 'cameratoolbutton'
+      TabOrder = 0
+      Trimming = ttCharacter
+      Width = 48.000000000000000000
+    end
+    object Button2: TButton
+      Height = 48.000000000000000000
+      Position.X = 40.000000000000000000
+      StyleLookup = 'searchtoolbutton'
+      TabOrder = 1
+      Text = 'Search'
+      Trimming = ttCharacter
+      Width = 48.000000000000000000
+    end
+    object Button3: TButton
+      Action = ShowShareSheetAction1
+      Height = 48.000000000000000000
+      Position.X = 312.000000000000000000
+      StyleLookup = 'actiontoolbutton'
+      TabOrder = 2
+      Trimming = ttCharacter
+      Width = 48.000000000000000000
+    end
+  end
+  object Image1: TImage
+    MultiResBitmap = <
+      item
+      end>
+    Align = alClient
+    Height = 567.000000000000000000
+    Width = 360.000000000000000000
+  end
+  object ActionList1: TActionList
+    Left = 280
+    Top = 8
+    object TakePhotoFromCameraAction1: TTakePhotoFromCameraAction
+      OnDidFinishTaking = TakePhotoFromCameraAction1DidFinishTaking
+    end
+    object ShowShareSheetAction1: TShowShareSheetAction
+      OnBeforeExecute = ShowShareSheetAction1BeforeExecute
+    end
+  end
+end
