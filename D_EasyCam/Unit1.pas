@@ -18,8 +18,10 @@ type
     ActionList1: TActionList;
     TakePhotoFromCameraAction1: TTakePhotoFromCameraAction;
     ShowShareSheetAction1: TShowShareSheetAction;
+    TakePhotoFromLibraryAction1: TTakePhotoFromLibraryAction;
     procedure TakePhotoFromCameraAction1DidFinishTaking(Image: TBitmap);
     procedure ShowShareSheetAction1BeforeExecute(Sender: TObject);
+    procedure TakePhotoFromLibraryAction1DidFinishTaking(Image: TBitmap);
   private
     { Private declarations }
   public
@@ -39,6 +41,11 @@ begin
 end;
 
 procedure TForm1.TakePhotoFromCameraAction1DidFinishTaking(Image: TBitmap);
+begin
+   Image1.Bitmap.Assign(Image);
+end;
+
+procedure TForm1.TakePhotoFromLibraryAction1DidFinishTaking(Image: TBitmap);
 begin
    Image1.Bitmap.Assign(Image);
 end;

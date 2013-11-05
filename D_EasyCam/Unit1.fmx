@@ -19,7 +19,6 @@ object Form1: TForm1
     Width = 360.000000000000000000
     object Button1: TButton
       Action = TakePhotoFromCameraAction1
-      Align = alClient
       Height = 48.000000000000000000
       StyleLookup = 'cameratoolbutton'
       TabOrder = 0
@@ -27,11 +26,11 @@ object Form1: TForm1
       Width = 48.000000000000000000
     end
     object Button2: TButton
+      Action = TakePhotoFromLibraryAction1
       Height = 48.000000000000000000
       Position.X = 40.000000000000000000
       StyleLookup = 'searchtoolbutton'
       TabOrder = 1
-      Text = 'Search'
       Trimming = ttCharacter
       Width = 48.000000000000000000
     end
@@ -61,6 +60,9 @@ object Form1: TForm1
     end
     object ShowShareSheetAction1: TShowShareSheetAction
       OnBeforeExecute = ShowShareSheetAction1BeforeExecute
+    end
+    object TakePhotoFromLibraryAction1: TTakePhotoFromLibraryAction
+      OnDidFinishTaking = TakePhotoFromLibraryAction1DidFinishTaking
     end
   end
 end

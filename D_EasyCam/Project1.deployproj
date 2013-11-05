@@ -5,6 +5,14 @@
     </ProjectExtensions>
     <ItemGroup Condition="'$(Platform)'=='Win64'"/>
     <ItemGroup Condition="'$(Platform)'=='Android'">
+        <DeployFile Include="Android\Release\libProject1.so" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Project1\library\lib\armeabi\</RemoteDir>
+            <RemoteName>libProject1.so</RemoteName>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Required>True</Required>
+        </DeployFile>
         <DeployFile Include="Android\Debug\libProject1.so" Condition="'$(Config)'=='Debug'">
             <RemoteDir>Project1\library\lib\armeabi\</RemoteDir>
             <RemoteName>libProject1.so</RemoteName>
@@ -13,42 +21,49 @@
             <RemoteCommand/>
             <Required>True</Required>
         </DeployFile>
-        <DeployFile Include="D:\AndroidDev\icons\36.png" Condition="'$(Config)'=='Debug'">
+        <DeployFile Include="f:\embarcadero\rad studio\12.0\lib\android\debug\classes.dex" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>Project1\classes\</RemoteDir>
+            <RemoteName>classes.dex</RemoteName>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+        </DeployFile>
+        <DeployFile Include="D:\AndroidDev\icons\36.png" Condition="'$(Config)'=='Release'">
             <RemoteDir>Project1\res\drawable-ldpi\</RemoteDir>
             <RemoteName>ic_launcher.png</RemoteName>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
         </DeployFile>
-        <DeployFile Include="D:\AndroidDev\icons\72.png" Condition="'$(Config)'=='Debug'">
+        <DeployFile Include="D:\AndroidDev\icons\72.png" Condition="'$(Config)'=='Release'">
             <RemoteDir>Project1\res\drawable-hdpi\</RemoteDir>
             <RemoteName>ic_launcher.png</RemoteName>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
         </DeployFile>
-        <DeployFile Include="D:\AndroidDev\icons\48.png" Condition="'$(Config)'=='Debug'">
+        <DeployFile Include="D:\AndroidDev\icons\48.png" Condition="'$(Config)'=='Release'">
             <RemoteDir>Project1\res\drawable-mdpi\</RemoteDir>
             <RemoteName>ic_launcher.png</RemoteName>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
         </DeployFile>
-        <DeployFile Include="D:\AndroidDev\icons\96.png" Condition="'$(Config)'=='Debug'">
+        <DeployFile Include="f:\embarcadero\rad studio\12.0\lib\android\release\classes.dex" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Project1\classes\</RemoteDir>
+            <RemoteName>classes.dex</RemoteName>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+        </DeployFile>
+        <DeployFile Include="D:\AndroidDev\icons\96.png" Condition="'$(Config)'=='Release'">
             <RemoteDir>Project1\res\drawable-xhdpi\</RemoteDir>
             <RemoteName>ic_launcher.png</RemoteName>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
         </DeployFile>
-        <DeployFile Include="f:\RAD Studio\12.0\PlatformSDKs\android-ndk-r8e\prebuilt\android-arm\gdbserver\gdbserver" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>Project1\library\lib\armeabi\</RemoteDir>
-            <RemoteName>gdbserver</RemoteName>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-        </DeployFile>
-        <DeployFile Include="D:\AndroidDev\icons\144.png" Condition="'$(Config)'=='Debug'">
+        <DeployFile Include="D:\AndroidDev\icons\144.png" Condition="'$(Config)'=='Release'">
             <RemoteDir>Project1\res\drawable-xxhdpi\</RemoteDir>
             <RemoteName>ic_launcher.png</RemoteName>
             <Operation>1</Operation>
@@ -62,9 +77,9 @@
             <LocalCommand/>
             <RemoteCommand/>
         </DeployFile>
-        <DeployFile Include="f:\embarcadero\rad studio\12.0\lib\android\debug\classes.dex" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>Project1\classes\</RemoteDir>
-            <RemoteName>classes.dex</RemoteName>
+        <DeployFile Include="Android\Release\AndroidManifest.xml" Condition="'$(Config)'=='Release'">
+            <RemoteDir>Project1\</RemoteDir>
+            <RemoteName>AndroidManifest.xml</RemoteName>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
