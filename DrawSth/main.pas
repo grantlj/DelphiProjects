@@ -12,8 +12,10 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,JPEG,winsock2;
+
 const
-  MAX_STEPS=50000;
+  MAX_STEPS=80000;
+
 type
   TForm1 = class(TForm)
     Edit1: TEdit;
@@ -47,11 +49,15 @@ type
     procedure RadioButton1Click(Sender: TObject);
     procedure RadioButton2Click(Sender: TObject);
     procedure ComboBox1Change(Sender: TObject);
+
   private
     { Private declarations }
   public
-    { Public declarations }
+    procedure InitialCanvas;
+    procedure PlayerComplete(win:boolean);
   end;
+
+
 
   {
     TPenAction is to save the pen's info.
@@ -76,6 +82,12 @@ type
 
   TACTS=array[1..MAX_STEPS] of TPenAction;
 
+  TGAMEINFO=record
+    PenActs:TACTS;
+    s:integer;
+    key:String[15];
+  end;
+
 var
   Form1: TForm1;
   ReadyToDraw:boolean;
@@ -88,28 +100,59 @@ implementation
 
 
 
-const
-  btn4_str1='Draw!';
-  btn4_str2='Submit!';
 
+const
+  BTN4_STANDBY_DRAW=1;
+  BTN4_STANDBY_SUBMIT_PLAYER=2;
+  BTN4_STANDBY_SUBMIT_OPPO=3;
 
 var
   PenActs:TACTS;
   PenActsCounts:longint;
   TmpPenStart,TmpPenEnd:int64;
   TmpIntStart,TmpIntEnd:int64;
-  ServSocketHandle,ServSocketID:DWORD;
-  CliSocketHandle,CliSocketID:DWORD;
-  CliSocketReady,ServSocketReady:boolean;
-  ServMode:boolean;
+  Lives:integer;
+  btn4_status:integer;
 
+
+  NowGame:TGAMEINFO;
 
   {*********************************
    NetWork varities defined here.
    *********************************
   }
   PlayerIP:string[15];
+  Agree:string[15];
+  DisAgree:string[15];
+  ServSocketHandle,ServSocketID:DWORD;
+  CliSocketHandle,CliSocketID:DWORD;
+  CliSocketReady,ServSocketReady:boolean;
+  ServMode:boolean;
 
+
+procedure ShowLives(x:integer);
+
+begin
+  if x<0 then
+     begin
+       MessageBox(form1.Handle,'You lost all your lives!:(','You Lost!',MB_ICONERROR);
+       Form1.InitialCanvas;
+       form1.PlayerComplete(false);
+       //Do SOMETHING.
+     end
+  else
+     form1.Label3.Caption:='You have '+inttostr(x)+' lives left!';
+end;
+
+procedure SetBtn4(x:integer);
+begin
+  btn4_status:=x;
+  if x=BTN4_STANDBY_DRAW then
+     form1.Button4.Caption:='Draw!';
+
+  if (x=BTN4_STANDBY_SUBMIT_PLAYER) or (x=BTN4_STANDBY_SUBMIT_OPPO) then
+    form1.Button4.Caption:='Submit!';
+end;
 
 //GetPenState is to refresh the PenState.
 procedure SetPenMode(isPen:boolean);
@@ -166,11 +209,12 @@ begin
 end;
 
 //Initial the Canvas.
-procedure InitialCanvas;
+procedure TForm1.InitialCanvas;
 begin
   with form1 do
     begin
       //PenActsCounts:=0;
+      Image1.Enabled:=true;
       Image1.Canvas.Pen.Color:=clwhite;
       Image1.Canvas.FillRect(Image1.Canvas.ClipRect);
       SetPenMode(RadioButton1.Checked);
@@ -213,7 +257,8 @@ procedure RewriteCanvasByActs(x:TACTS;s:integer);
 var
   i:longint;
 begin
-  InitialCanvas;
+  form1.InitialCanvas;
+  form1.Image1.Enabled:=false;
   form1.ComboBox1.Enabled:=false;
   form1.RadioButton1.Enabled:=false;
   form1.RadioButton2.Enabled:=false;
@@ -232,6 +277,7 @@ begin
          LineTo(x[i].EndX,x[i].EndY);
        end;
   ShowMessage('Drawing processing shown successfully.');
+
   form1.ComboBox1.Enabled:=true;
   form1.RadioButton1.Enabled:=true;
   form1.RadioButton2.Enabled:=true;
@@ -240,12 +286,87 @@ begin
   form1.Button7.Enabled:=true;
 end;
 
-//Ready To Draw.
+
+procedure SetOppoTurn(NowGame:TGameInfo);
+
+procedure SetButtonsCondition;
+begin
+   with form1 do
+     begin
+       Edit2.Enabled:=true;
+       ComboBox1.Enabled:=false;
+       RadioButton1.Enabled:=false;
+       RadioButton2.Enabled:=false;
+       Button7.Enabled:=false;
+       Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_OPPO);
+       Button5.Enabled:=false;
+       Button6.Enabled:=true;
+     end;
+end;
+
+begin
+
+  RewriteCanvasByActs(NowGame.PenActs,NowGame.s);
+  SetButtonsCondition;
+  Lives:=3;
+  ShowLives(Lives);
+
+end;
+
+procedure SetPlayerTurn;
+procedure SetButtonsCondition;
+begin
+   with form1 do
+     begin
+       Edit2.Enabled:=true;
+       ComboBox1.Enabled:=true;
+       RadioButton1.Enabled:=true;
+       RadioButton2.Enabled:=true;
+       Button7.Enabled:=true;
+       Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_PLAYER);
+       Button5.Enabled:=true;
+       Button6.Enabled:=true;
+     end;
+end;
+begin
+
+end;
+
+procedure TForm1.PlayerComplete(win: Boolean);
+begin
+  if win then
+    begin
+      label3.Caption:='YOU WIN....';
+    end
+  else
+    begin
+      label3.Caption:='YOU LOST...';
+    end;
+    SetPlayerTurn;
+end;
+
 procedure TForm1.Button4Click(Sender: TObject);
 begin
+
+  if btn4_status=BTN4_STANDBY_SUBMIT_OPPO then
+      begin
+        if (edit2.Text<>NowGame.key) then
+          begin
+            MessageBox(form1.Handle,'Sorry,your answer is not correct!','Wrong Anaser',MB_ICONERROR);
+            edit2.Text:='';
+            dec(Lives);
+            ShowLives(Lives);
+          end
+        else
+          begin
+            MessageBox(form1.Handle,'Congratulation!You got the correct answer!:)','Complete!',MB_ICONWARNING);
+            form1.PlayerComplete(true);
+          end;
+      end;
+
   if ReadyToDraw=false then
      begin
-       Button4.Caption:=btn4_str2;
+       SetBtn4(BTN4_STANDBY_SUBMIT_PLAYER);
        Button5.Enabled:=true;
        Button6.Enabled:=true;
        Button7.Enabled:=true;
@@ -270,7 +391,11 @@ end;
 procedure TForm1.Button6Click(Sender: TObject);
 begin
    //SaveToJPGFile;
-   RewriteCanvasByActs(PenActs,PenActsCounts);
+  // RewriteCanvasByActs(PenActs,PenActsCounts);
+   NowGame.s:=PenActsCounts;
+   NowGame.PenActs:=PenActs;
+   NowGame.key:=Edit2.Text;
+   SetOppoTurn(NowGame);
   //RewriteCanvasByActs(PenActsCounts);
 end;
 
@@ -291,7 +416,6 @@ end;
 
 //You start to draw.
 
-
 procedure TForm1.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
@@ -301,7 +425,6 @@ begin
   NewPenActs(x,y);
   SetDrawInt(TmpIntEnd-TmpIntStart);
   Image1.Canvas.MoveTo(x,y);
-
 end;
 
 //You are moving the line.
@@ -334,6 +457,7 @@ begin
   RadioButton2.Checked:=false;
   SetPenMode(RadioButton1.Checked);
 end;
+
 procedure TForm1.RadioButton2Click(Sender: TObject);
 
 begin
@@ -404,7 +528,21 @@ begin
      recv(Recever,PlayerIP,sizeof(PlayerIP),0);
      info:='A new game request from:'+PlayerIP+', accept?';
      ReturnVal:=MessageBox(0,PWideChar(info),'New Game Request',MB_YESNO);
+
+     if ReturnVal=7 then
+       send(Recever,DisAgree,sizeof(DisAgree),0);
+     if ReturnVal=6 then
+       send(Recever,Agree,sizeof(Agree),0);
+
    until (ReturnVal=6) or (ServMode=false);
+
+   form1.Edit1.Enabled:=false;form1.Button1.Enabled:=false;
+
+    repeat
+      recv(Recever,NowGame,sizeof(NowGame),0);
+      SetOppoTurn(NowGame);
+
+    until 1=2;
 
    //end;
 end;
@@ -415,11 +553,15 @@ begin
 end;
 
 //Initial!Program run from here.
+//1800016.
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+
   ServMode:=true;
   ReadyToDraw:=false;
   ComboBox1.Text:='10';
+  Agree:='YES';
+  DisAgree:='NO';
   PenActsCounts:=0;
   ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
   CliSocketHandle:=CreateThread(nil,0,@CliSocketThread,nil,0,CliSocketID);
