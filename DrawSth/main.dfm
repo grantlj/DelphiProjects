@@ -24,25 +24,15 @@ object Form1: TForm1
     Height = 13
     Caption = 'IP Address'
   end
-  object Image1: TImage
-    Left = 24
-    Top = 134
-    Width = 673
-    Height = 355
-    Enabled = False
-    OnMouseDown = Image1MouseDown
-    OnMouseMove = Image1MouseMove
-    OnMouseUp = Image1MouseUp
-  end
   object Label2: TLabel
     Left = 24
     Top = 110
-    Width = 33
-    Height = 30
+    Width = 22
+    Height = 13
     Caption = 'Key:'
   end
   object Label3: TLabel
-    Left = 336
+    Left = 414
     Top = 95
     Width = 275
     Height = 33
@@ -55,6 +45,15 @@ object Form1: TForm1
     Font.Style = []
     ParentColor = False
     ParentFont = False
+  end
+  object Image1: TImage
+    Left = 24
+    Top = 144
+    Width = 673
+    Height = 365
+    OnMouseDown = Image1MouseDown
+    OnMouseMove = Image1MouseMove
+    OnMouseUp = Image1MouseUp
   end
   object Edit1: TEdit
     Left = 104
@@ -126,7 +125,7 @@ object Form1: TForm1
     TabOrder = 7
   end
   object Button7: TButton
-    Left = 250
+    Left = 328
     Top = 107
     Width = 80
     Height = 21
@@ -136,13 +135,14 @@ object Form1: TForm1
     OnClick = Button7Click
   end
   object ComboBox1: TComboBox
-    Left = 139
+    Left = 126
     Top = 107
     Width = 105
     Height = 21
     Enabled = False
     TabOrder = 9
-    Text = '15'
+    Text = '10'
+    OnChange = ComboBox1Change
     Items.Strings = (
       '5'
       '6'
@@ -159,7 +159,30 @@ object Form1: TForm1
       '17'
       '18'
       '19'
-      '20')
+      '20'
+      '')
+  end
+  object RadioButton1: TRadioButton
+    Left = 240
+    Top = 104
+    Width = 41
+    Height = 25
+    Caption = 'Pen'
+    Checked = True
+    Enabled = False
+    TabOrder = 10
+    TabStop = True
+    OnClick = RadioButton1Click
+  end
+  object RadioButton2: TRadioButton
+    Left = 288
+    Top = 104
+    Width = 41
+    Height = 25
+    Caption = 'Rub'
+    Enabled = False
+    TabOrder = 11
+    OnClick = RadioButton2Click
   end
   object ColorDialog1: TColorDialog
     Left = 672
