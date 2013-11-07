@@ -51,6 +51,7 @@ object Form1: TForm1
     Top = 144
     Width = 673
     Height = 365
+    Enabled = False
     OnMouseDown = Image1MouseDown
     OnMouseMove = Image1MouseMove
     OnMouseUp = Image1MouseUp
@@ -69,6 +70,7 @@ object Form1: TForm1
     Height = 25
     Caption = 'Connect 2 Play!'
     TabOrder = 1
+    OnClick = Button1Click
   end
   object Button2: TButton
     Left = 456
@@ -78,6 +80,7 @@ object Form1: TForm1
     Caption = 'Disconnect'
     Enabled = False
     TabOrder = 2
+    OnClick = Button2Click
   end
   object Button3: TButton
     Left = 585

@@ -17,6 +17,43 @@ const
   MAX_STEPS=80000;
 
 type
+  {
+    TPenAction is to save the pen's info.
+    Pix:              the width of the pen.
+    Color:            the color of the pen.
+    StartX,StartY:    the location which pen starts at.
+    EndX,EndY:        the location which pen ends at.
+    Tag:              to determine the pen's position in a line.
+    Interval:         to simulate the processing of drwaing ACCURATELY.
+    DrawInt:          to record the interval BETWEEN TWO LINES.
+  }
+
+  TPenAction=record
+    Pix:integer;
+    Color:TColor;
+    StartX,StartY:integer;
+    EndX,EndY:integer;
+    Tag:integer;
+    Interval:longint;
+    DrawInt:longint;
+  end;
+
+  TACTS=array[1..MAX_STEPS] of TPenAction;
+
+  TGAMEINFO=record
+    PenActs:TACTS;
+    s:integer;
+    key:String[15];
+  end;
+
+  PTQUEINFO=^TQUEINFO;
+    TQUEINFO=record
+    p:       integer;    //p is 1, then send game info.
+                         //p is 2, then send result.
+    GameInfo:TGAMEINFO;
+    result  :boolean;
+  end;
+
   TForm1 = class(TForm)
     Edit1: TEdit;
     Label1: TLabel;
@@ -49,44 +86,19 @@ type
     procedure RadioButton1Click(Sender: TObject);
     procedure RadioButton2Click(Sender: TObject);
     procedure ComboBox1Change(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
 
   private
     { Private declarations }
   public
     procedure InitialCanvas;
     procedure PlayerComplete(win:boolean);
+    procedure PlayerSubmit(PenActs:TACTS;PenActsCounts:longint);
   end;
 
 
 
-  {
-    TPenAction is to save the pen's info.
-    Pix:              the width of the pen.
-    Color:            the color of the pen.
-    StartX,StartY:    the location which pen starts at.
-    EndX,EndY:        the location which pen ends at.
-    Tag:              to determine the pen's position in a line.
-    Interval:         to simulate the processing of drwaing ACCURATELY.
-    DrawInt:          to record the interval BETWEEN TWO LINES.
-  }
-
-  TPenAction=record
-    Pix:integer;
-    Color:TColor;
-    StartX,StartY:integer;
-    EndX,EndY:integer;
-    Tag:integer;
-    Interval:longint;
-    DrawInt:longint;
-  end;
-
-  TACTS=array[1..MAX_STEPS] of TPenAction;
-
-  TGAMEINFO=record
-    PenActs:TACTS;
-    s:integer;
-    key:String[15];
-  end;
 
 var
   Form1: TForm1;
@@ -105,6 +117,7 @@ const
   BTN4_STANDBY_DRAW=1;
   BTN4_STANDBY_SUBMIT_PLAYER=2;
   BTN4_STANDBY_SUBMIT_OPPO=3;
+  BTN4_IDLE=0;
 
 var
   PenActs:TACTS;
@@ -128,8 +141,9 @@ var
   CliSocketHandle,CliSocketID:DWORD;
   CliSocketReady,ServSocketReady:boolean;
   ServMode:boolean;
+  DestThreadID:DWORD;
 
-
+//Show Lives info.
 procedure ShowLives(x:integer);
 
 begin
@@ -144,6 +158,7 @@ begin
      form1.Label3.Caption:='You have '+inttostr(x)+' lives left!';
 end;
 
+//Button 4 is the KEY BUTTON. Save its statue is very important.
 procedure SetBtn4(x:integer);
 begin
   btn4_status:=x;
@@ -286,7 +301,7 @@ begin
   form1.Button7.Enabled:=true;
 end;
 
-
+//Initail for Opposite's turn.
 procedure SetOppoTurn(NowGame:TGameInfo);
 
 procedure SetButtonsCondition;
@@ -301,6 +316,7 @@ begin
        Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_OPPO);
        Button5.Enabled:=false;
        Button6.Enabled:=true;
+       Image1.Enabled:=false;
      end;
 end;
 
@@ -313,7 +329,10 @@ begin
 
 end;
 
+
+//Initial for Player's turn.
 procedure SetPlayerTurn;
+
 procedure SetButtonsCondition;
 begin
    with form1 do
@@ -326,13 +345,28 @@ begin
        Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_PLAYER);
        Button5.Enabled:=true;
        Button6.Enabled:=true;
+       Image1.Enabled:=true;
      end;
 end;
-begin
 
+begin
+  form1.Image1.Enabled:=true;
+  ClearPenActs;
+  form1.InitialCanvas;
 end;
 
+
+//PlayerComplete:   Player complete answer.
+//PlayerSubmit  :   Player complete question.
+//*********************************************
+//*********************************************
+//set PostMessage!!! here!
+//*********************************************
+//*********************************************
+
 procedure TForm1.PlayerComplete(win: Boolean);
+var
+  quetmp:PTQUEINFO;
 begin
   if win then
     begin
@@ -342,8 +376,37 @@ begin
     begin
       label3.Caption:='YOU LOST...';
     end;
-    SetPlayerTurn;
+    //Post Message to thread.
+
+    new(quetmp);
+    quetmp^.p:=2;
+    quetmp^.result:=win;
+
+    repeat
+
+    until PostThreadMessage(DestThreadID,0,longint(quetmp),0);
+    //SetPlayerTurn;
 end;
+
+//Player Submit questions.
+procedure TForm1.PlayerSubmit(PenActs:TACTS;PenActsCounts:longint);
+var
+  NowGame:TGameInfo;
+  quetmp:PTQUEINFO;
+begin
+  NowGame.PenActs:=PenActs;
+  NowGame.s:=PenActsCounts;
+  NowGame.key:=edit2.text;
+  //Post Message to therad.
+  new(quetmp);
+  quetmp^.p:=1;
+  quetmp^.GameInfo:=NowGame;
+  repeat
+
+  until PostThreadMessage(DestThreadID,0,longint(quetmp),0);
+end;
+
+
 
 procedure TForm1.Button4Click(Sender: TObject);
 begin
@@ -361,10 +424,22 @@ begin
           begin
             MessageBox(form1.Handle,'Congratulation!You got the correct answer!:)','Complete!',MB_ICONWARNING);
             form1.PlayerComplete(true);
+            SetBtn4(BTN4_IDLE);
           end;
       end;
 
-  if ReadyToDraw=false then
+  if btn4_status=BTN4_STANDBY_SUBMIT_PLAYER then
+    begin
+      PlayerSubmit(PenActs,PenActsCounts);
+      SetBtn4(BTN4_IDLE);
+    end;
+
+  if btn4_status=BTN4_IDLE then
+    begin
+      //Do Nothing...
+    end;
+
+  {if ReadyToDraw=false then
      begin
        SetBtn4(BTN4_STANDBY_SUBMIT_PLAYER);
        Button5.Enabled:=true;
@@ -377,7 +452,8 @@ begin
        ReadyToDraw:=true;
        Image1.Enabled:=true;
        InitialCanvas;
-     end;
+     end; }
+
 end;
 
 //Clear Button.
@@ -485,6 +561,8 @@ var
   cmd:cardinal;
   ReturnVal:integer;
   Info:string;
+  msg1:msg;
+  p:PTQUEINFO;
 
 procedure InitialWSA;
 begin
@@ -523,9 +601,12 @@ begin
      //Yes is 6, No is 7.
    ServSocketReady:=true;
 
+   showmessage('Serv socket started.');
    repeat
      Recever:=accept(Self,@CliAddr,@CliAddrLen);
+
      recv(Recever,PlayerIP,sizeof(PlayerIP),0);
+
      info:='A new game request from:'+PlayerIP+', accept?';
      ReturnVal:=MessageBox(0,PWideChar(info),'New Game Request',MB_YESNO);
 
@@ -540,31 +621,122 @@ begin
 
     repeat
       recv(Recever,NowGame,sizeof(NowGame),0);
+      //Get info from the opposite.
+      //So we initial the turn for the opposite. and wait for the answer message.
       SetOppoTurn(NowGame);
 
-    until 1=2;
+      repeat
 
-   //end;
+      until GetMessage(msg1,0,0,0);
+
+      p:=PTQUEINFO(msg1.wParam);
+
+      if p^.p=2 then send(Recever,p^.result,sizeof(p^.result),0);
+      dispose(p);
+
+      SetPlayerTurn;
+      repeat
+
+      until GetMessage(msg1,0,0,0);
+      if p^.p=1 then send(Recever,p^.GameInfo,sizeof(p^.GameInfo),0);
+
+    until (DestThreadID<>ServSocketID);
 end;
 
 procedure CliSocketThread;
+var
+  wVersionRequired:word;
+  Sender:TSocket;
+  ServAddr:sockaddr_in;
+  WSAData:TWSAData;
+  cmd:cardinal;
+  msg1:msg;
+  p:PTQUEINFO;
+procedure InitialWSA;
 begin
-
+  WSAStartup($0101,WSAData);
 end;
 
+procedure InitialSocket;
+begin
+  Sender:=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+end;
+
+procedure SetServInfo;
+begin
+  ServAddr.sin_family:=AF_INET;
+  ServAddr.sin_port:=htons(1273);
+  ServAddr.sin_addr.S_addr:=inet_addr('127.0.0.1');
+end;
+
+function TryConnect:boolean;
+var
+  i:integer;
+begin
+   i:=0;
+   repeat
+     inc(i);
+     sleep(500);
+   until (connect(Sender,sockaddr(ServAddr),sizeof(ServAddr))<>SOCKET_ERROR) or (i>5);
+   if i>5 then result:=true
+          else result:=false;
+end;
+
+begin
+   try
+     //Initial Socket.
+     InitialWSA;
+     InitialSocket;
+     SetServInfo;
+   except
+     showmessage('Initial Network Failed.');
+   end;
+   if not(TryConnect) then
+     begin
+       showmessage('Connect to Player failed!');
+       form1.Button2.Click;
+     end;
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+   CliSocketHandle:=CreateThread(nil,0,@CliSocketThread,nil,0,CliSocketID);
+   DestThreadID:=CliSocketID;
+   //as the accept() function is hang up at ServSocket thread.
+   //We MUST EXIT THREAD Directly.
+   TerminateThread(ServSocketHandle,0);
+
+   button1.Enabled:=false;
+   button2.Enabled:=true;
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+   ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
+   DestThreadID:=ServSocketID;
+    //as the accept() function is hang up at CliSocket thread.
+   //We MUST EXIT THREAD Directly.
+   TerminateThread(CliSocketHandle,0);
+   edit1.Text:='';
+   button2.enabled:=false;
+   button1.Enabled:=true;
+end;
+
+
 //Initial!Program run from here.
-//1800016.
 procedure TForm1.FormCreate(Sender: TObject);
 begin
 
   ServMode:=true;
-  ReadyToDraw:=false;
+  //ReadyToDraw:=false;
   ComboBox1.Text:='10';
+  SetBtn4(BTN4_IDLE);
   Agree:='YES';
   DisAgree:='NO';
   PenActsCounts:=0;
   ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
-  CliSocketHandle:=CreateThread(nil,0,@CliSocketThread,nil,0,CliSocketID);
+  DestThreadID:=ServSocketID;
+
 end;
 
 end.
