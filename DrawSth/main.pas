@@ -97,7 +97,12 @@ type
     procedure PlayerSubmit(PenActs:TACTS;PenActsCounts:longint);
   end;
 
-
+  TMyThread=class(TThread)
+    protected
+      procedure Execute;override;
+      //procedure RewriteCanvasByActs(x:TACTS;s:longint);
+      procedure RewriteCanvasByActs;
+  end;
 
 
 var
@@ -149,6 +154,8 @@ var
   DestThreadID:DWORD;
 
 //Show Lives info.
+
+
 procedure ShowLives(x:integer);
 
 begin
@@ -162,6 +169,54 @@ begin
   else
      form1.Label3.Caption:='You have '+inttostr(x)+' lives left!';
 end;
+
+//procedure TMyThread.RewriteCanvasByActs(x: TACTS; s: Integer);
+procedure TMyThread.RewriteCanvasByActs;
+var
+  i,s:longint;
+  x:TACTS;
+begin
+  form1.InitialCanvas;
+  form1.Image1.Enabled:=true;
+  form1.ComboBox1.Enabled:=false;
+  form1.RadioButton1.Enabled:=false;
+  form1.RadioButton2.Enabled:=false;
+  form1.Button5.Enabled:=false;
+  form1.Button6.Enabled:=false;
+  form1.Button7.Enabled:=false;
+
+  x:=NowGame.PenActs;
+  s:=NowGame.s;
+
+  for i:=1 to s do
+     with Form1.Image1.Canvas do
+       begin
+         if (x[i].DrawInt<>0) and (i<>1) then Sleep(x[i].DrawInt);
+         Pen.Color:=x[i].Color;
+         Pen.Width:=x[i].Pix;
+         MoveTo(x[i].StartX,x[i].StartY);
+         Application.ProcessMessages;
+         Sleep(x[i].Interval);
+         LineTo(x[i].EndX,x[i].EndY);
+       end;
+
+  ShowMessage('Time for you to guess!');
+  form1.ComboBox1.Enabled:=true;
+  form1.RadioButton1.Enabled:=true;
+  form1.RadioButton2.Enabled:=true;
+  form1.Button6.Enabled:=true;
+  form1.Button5.Enabled:=true;
+  form1.Button7.Enabled:=true;
+  Lives:=3;
+  ShowLives(Lives);
+end;
+
+procedure TMyThread.Execute;
+begin
+  // Synchronize(RewriteCanvasByActs(NowGame.PenActs,NowGame.s));
+  Synchronize(RewriteCanvasByActs);
+end;
+
 
 //Button 4 is the KEY BUTTON. Save its statue is very important.
 procedure SetBtn4(x:integer);
@@ -272,41 +327,6 @@ begin
   end;
 end;
 
-//Simulate the drwaing processing.
-
-procedure RewriteCanvasByActs(x:TACTS;s:longint);
-var
-  i:longint;
-begin
-  form1.InitialCanvas;
-  form1.Image1.Enabled:=true;
-  form1.ComboBox1.Enabled:=false;
-  form1.RadioButton1.Enabled:=false;
-  form1.RadioButton2.Enabled:=false;
-  form1.Button5.Enabled:=false;
-  form1.Button6.Enabled:=false;
-  form1.Button7.Enabled:=false;
-
-  for i:=1 to s do
-     with Form1.Image1.Canvas do
-       begin
-         if (x[i].DrawInt<>0) and (i<>1) then Sleep(x[i].DrawInt);
-         Pen.Color:=x[i].Color;
-         Pen.Width:=x[i].Pix;
-         MoveTo(x[i].StartX,x[i].StartY);
-         Application.ProcessMessages;
-         Sleep(x[i].Interval);
-         LineTo(x[i].EndX,x[i].EndY);
-       end;
-
-  ShowMessage('Drawing processing shown successfully.');
-  form1.ComboBox1.Enabled:=true;
-  form1.RadioButton1.Enabled:=true;
-  form1.RadioButton2.Enabled:=true;
-  form1.Button6.Enabled:=true;
-  form1.Button5.Enabled:=true;
-  form1.Button7.Enabled:=true;
-end;
 
 //Initail for Opposite's turn.
 procedure SetOppoTurn(NowGame:TGameInfo);
@@ -323,16 +343,20 @@ begin
        Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_OPPO);
        Button5.Enabled:=false;
        Button6.Enabled:=true;
+       InitialCanvas;
        Image1.Enabled:=true;
      end;
 end;
 
 begin
 
-  RewriteCanvasByActs(NowGame.PenActs,NowGame.s);
+  //RewriteCanvasByActs(NowGame.PenActs,NowGame.s);
+  form1.Label3.Caption:=PlayerIP+'is Drawing....';
+  TMyThread.Create;
+
   SetButtonsCondition;
-  Lives:=3;
-  ShowLives(Lives);
+  //Lives:=3;
+ // ShowLives(Lives);
 
 end;
 
@@ -352,6 +376,7 @@ begin
        Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_PLAYER);
        Button5.Enabled:=true;
        Button6.Enabled:=true;
+       InitialCanvas;
        Image1.Enabled:=true;
      end;
 end;
@@ -393,7 +418,8 @@ begin
     repeat
 
     until PostThreadMessage(DestThreadID,0,longint(quetmp),0);
-    //SetPlayerTurn;
+
+   // SetPlayerTurn;
 end;
 
 //Player Submit questions.
@@ -688,7 +714,7 @@ begin
               until GetMessage(msg1,0,0,0);
 
               //Send Player's question.
-
+              p:=PTQUEINFO(msg1.wParam);
               if p^.p=1 then
                  send(Recever,p^.GameInfo,sizeof(p^.GameInfo),0);
               dispose(p);
@@ -835,12 +861,15 @@ begin
                   if p^.result then showmessage('Oppo answers your question ok')
                                else showmessage('Oppo answers your question bad');
                   //Oppo's turn.
+
+                  recv(Sender,NowGame,sizeof(NowGame),0);
                   SetOppoTurn(NowGame);
 
                   repeat
 
                   until GetMessage(msg1,0,0,0);
 
+                  p:=PTQUEINFO(msg1.wParam);
                   //Send Player's answer.
                   if p^.p=2 then
                      send(Sender,p^.result,sizeof(p^.result),0);
@@ -911,8 +940,8 @@ begin
   DisAgree:='NO';
   PenActsCounts:=0;
   InitialCanvas;
-   ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
-   DestThreadID:=ServSocketID;
+  ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
+  DestThreadID:=ServSocketID;
 
 end;
 
