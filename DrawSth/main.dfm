@@ -51,7 +51,6 @@ object Form1: TForm1
     Top = 144
     Width = 673
     Height = 365
-    Enabled = False
     OnMouseDown = Image1MouseDown
     OnMouseMove = Image1MouseMove
     OnMouseUp = Image1MouseUp

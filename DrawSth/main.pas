@@ -42,7 +42,7 @@ type
 
   TGAMEINFO=record
     PenActs:TACTS;
-    s:integer;
+    s:longint;
     key:String[15];
   end;
 
@@ -106,6 +106,7 @@ var
   Tag:integer;
 
 
+
 implementation
 
 {$R *.dfm}
@@ -126,6 +127,10 @@ var
   TmpIntStart,TmpIntEnd:int64;
   Lives:integer;
   btn4_status:integer;
+
+  Self,Recever:TSOCKET;
+  Sender:TSOCKET;
+
 
 
   NowGame:TGAMEINFO;
@@ -268,18 +273,20 @@ begin
 end;
 
 //Simulate the drwaing processing.
-procedure RewriteCanvasByActs(x:TACTS;s:integer);
+
+procedure RewriteCanvasByActs(x:TACTS;s:longint);
 var
   i:longint;
 begin
   form1.InitialCanvas;
-  form1.Image1.Enabled:=false;
+  form1.Image1.Enabled:=true;
   form1.ComboBox1.Enabled:=false;
   form1.RadioButton1.Enabled:=false;
   form1.RadioButton2.Enabled:=false;
   form1.Button5.Enabled:=false;
   form1.Button6.Enabled:=false;
   form1.Button7.Enabled:=false;
+
   for i:=1 to s do
      with Form1.Image1.Canvas do
        begin
@@ -291,8 +298,8 @@ begin
          Sleep(x[i].Interval);
          LineTo(x[i].EndX,x[i].EndY);
        end;
-  ShowMessage('Drawing processing shown successfully.');
 
+  ShowMessage('Drawing processing shown successfully.');
   form1.ComboBox1.Enabled:=true;
   form1.RadioButton1.Enabled:=true;
   form1.RadioButton2.Enabled:=true;
@@ -316,7 +323,7 @@ begin
        Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_OPPO);
        Button5.Enabled:=false;
        Button6.Enabled:=true;
-       Image1.Enabled:=false;
+       Image1.Enabled:=true;
      end;
 end;
 
@@ -350,7 +357,7 @@ begin
 end;
 
 begin
-  form1.Image1.Enabled:=true;
+  SetButtonsCondition;
   ClearPenActs;
   form1.InitialCanvas;
 end;
@@ -360,10 +367,11 @@ end;
 //PlayerSubmit  :   Player complete question.
 //*********************************************
 //*********************************************
-//set PostMessage!!! here!
+//set PostMessage here!
 //*********************************************
 //*********************************************
 
+//Player complete answer.
 procedure TForm1.PlayerComplete(win: Boolean);
 var
   quetmp:PTQUEINFO;
@@ -401,6 +409,8 @@ begin
   new(quetmp);
   quetmp^.p:=1;
   quetmp^.GameInfo:=NowGame;
+  //showmessage(inttostr(quetmp^.GameInfo.s));
+ // ReWriteCanvasByActs(quetmp^.GameInfo.PenActs,quetmp^.GameInfo.s);
   repeat
 
   until PostThreadMessage(DestThreadID,0,longint(quetmp),0);
@@ -553,7 +563,7 @@ end;
 procedure ServSocketThread;
 var
   wVersionRequired:word;
-  Self,Recever:TSOCKET;
+
   ServAddr:sockaddr_in;
   WSAData:TWSAData;
   CliAddr:SockAddr;
@@ -563,110 +573,188 @@ var
   Info:string;
   msg1:msg;
   p:PTQUEINFO;
+  InitFlag:boolean;
+  unbind:boolean;
 
-procedure InitialWSA;
+function InitialWSA:boolean;
 begin
-  WSAStartup($0101,WSAData);
+  if WSAStartup($0101,WSAData)<>0
+    then
+      begin
+        result:=false;
+        showmessage(inttostr(WSAGetLastError));
+      end
+    else
+      result:=true;
 end;
 
-procedure InitialSocket;
+function InitialSocket:boolean;
 begin
   Self:=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+  if Self=INVALID_SOCKET then
+    begin
+      result:=false;
+      showmessage(inttostr(WSAGetLastError));
+    end
+  else
+    result:=true;
 end;
 
-procedure BindServInfo;
+function BindServInfo:boolean;
 begin
   ServAddr.sin_family:=AF_INET;
   ServAddr.sin_port:=htons(1273);
   ServAddr.sin_addr.S_addr:=htonl(INADDR_ANY);
-  bind(Self,SockAddr(ServAddr),sizeof(ServAddr));
+ if bind(Self,SockAddr(ServAddr),sizeof(ServAddr))=SOCKET_ERROR then
+   begin
+   result:=false;
+   showmessage(inttostr(WSAGetLastError));
+   end
+ else
+   result:=true;
 end;
 
-procedure StartListen;
+function StartListen:boolean;
 begin
-  listen(Self,1);
+  if listen(Self,1)=SOCKET_ERROR then
+    begin
+      result:=false;
+      //showmessage(inttostr(WSAGetLastError));
+    end
+  else
+    result:=true;
 end;
 
 begin
-   ServSocketReady:=false;
+        // unbind:=true;
+        // setsockopt(Self, SOL_SOCKET,SO_REUSEADDR,PAnsiChar(unbind),sizeof(unbind));
+         //CloseSocket(Self);
+       //  setsockopt(Recever,SOL_SOCKET,SO_REUSEADDR,PAnsiChar(unbind),sizeof(unbind));
+         //CloseSocket(Recever);
+
+   InitFlag:=false;
    try
      //Initial Socket.
-     InitialWSA;
-     InitialSocket;
-     BindServInfo;
-     StartListen;
+     InitFlag:=InitialWSA       and
+               InitialSocket    and
+               BindServInfo     and
+               StartListen;
    except
      showmessage('Initial Network Failed.');
    end;
      //Yes is 6, No is 7.
-   ServSocketReady:=true;
 
-   showmessage('Serv socket started.');
-   repeat
-     Recever:=accept(Self,@CliAddr,@CliAddrLen);
+   if InitFlag=true then
+     begin
+          showmessage('Serv socket started.');
+          CliAddrLen:=sizeof(CliAddr);
+          Recever:=accept(Self,@CliAddr,@CliAddrLen);
+          showmessage('RECEIVED');
+          repeat
+            recv(Recever,PlayerIP,sizeof(PlayerIP),0);
+          until PlayerIP<>'';
 
-     recv(Recever,PlayerIP,sizeof(PlayerIP),0);
+          info:='A new game request from:'+PlayerIP+', accept?';
+          ReturnVal:=MessageBox(form1.handle,PWideChar(info),'New Game Request',MB_YESNO);
 
-     info:='A new game request from:'+PlayerIP+', accept?';
-     ReturnVal:=MessageBox(0,PWideChar(info),'New Game Request',MB_YESNO);
+          if ReturnVal=6 then
+          begin
+            send(Recever,Agree,sizeof(Agree),0);
+            form1.Edit1.Enabled:=false;form1.Button1.Enabled:=false;
 
-     if ReturnVal=7 then
+            repeat
+              //Receive oppo's question.
+              recv(Recever,NowGame,sizeof(NowGame),0);
+              //showmessage(inttostr(NowGame.s));
+              //Get info from the opposite.
+              //So we initial the turn for the opposite. and wait for the answer message.
+
+              SetOppoTurn(NowGame);
+
+              repeat
+              until GetMessage(msg1,0,0,0);
+              p:=PTQUEINFO(msg1.wParam);
+
+              //Send player's answer.
+              if p^.p=2 then
+                   send(Recever,p^.result,sizeof(p^.result),0);
+              dispose(p);
+
+              //Set player's question.
+
+              SetPlayerTurn;
+
+              repeat
+              until GetMessage(msg1,0,0,0);
+
+              //Send Player's question.
+
+              if p^.p=1 then
+                 send(Recever,p^.GameInfo,sizeof(p^.GameInfo),0);
+              dispose(p);
+         until (DestThreadID<>ServSocketID);
+     end
+     else
+       //Rejected new game.
        send(Recever,DisAgree,sizeof(DisAgree),0);
-     if ReturnVal=6 then
-       send(Recever,Agree,sizeof(Agree),0);
+     end
+     else
+       //Serv Socket Started failed.
+       begin
+         showmessage('Serv Socket Started failed.');
 
-   until (ReturnVal=6) or (ServMode=false);
+         {unbind:=true;
+         setsockopt(Self, SOL_SOCKET,SO_REUSEADDR,PAnsiChar(unbind),sizeof(unbind));
+         CloseSocket(Self);
+         setsockopt(Recever,SOL_SOCKET,SO_REUSEADDR,PAnsiChar(unbind),sizeof(unbind));
+         CloseSocket(Recever);
+         }
 
-   form1.Edit1.Enabled:=false;form1.Button1.Enabled:=false;
+         form1.Button1.enabled:=true;
+         form1.Button2.Enabled:=false;
+       end;
 
-    repeat
-      recv(Recever,NowGame,sizeof(NowGame),0);
-      //Get info from the opposite.
-      //So we initial the turn for the opposite. and wait for the answer message.
-      SetOppoTurn(NowGame);
-
-      repeat
-
-      until GetMessage(msg1,0,0,0);
-
-      p:=PTQUEINFO(msg1.wParam);
-
-      if p^.p=2 then send(Recever,p^.result,sizeof(p^.result),0);
-      dispose(p);
-
-      SetPlayerTurn;
-      repeat
-
-      until GetMessage(msg1,0,0,0);
-      if p^.p=1 then send(Recever,p^.GameInfo,sizeof(p^.GameInfo),0);
-
-    until (DestThreadID<>ServSocketID);
 end;
 
 procedure CliSocketThread;
 var
   wVersionRequired:word;
-  Sender:TSocket;
-  ServAddr:sockaddr_in;
+  ServAddr:TSockAddrin;
   WSAData:TWSAData;
   cmd:cardinal;
   msg1:msg;
   p:PTQUEINFO;
-procedure InitialWSA;
+  InitFlag:boolean;
+  re:integer;
+  RequestRply:string[15];
+
+
+function InitialWSA:boolean;
 begin
-  WSAStartup($0101,WSAData);
+  if WSAStartup($0101,WSAData)<>0
+    then
+      result:=false
+    else
+      result:=true;
 end;
 
-procedure InitialSocket;
+function InitialSocket:boolean;
 begin
   Sender:=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+  if Sender=INVALID_SOCKET then
+    result:=false
+  else
+    result:=true;
 end;
 
 procedure SetServInfo;
+var
+ IP:AnsiString;
 begin
   ServAddr.sin_family:=AF_INET;
   ServAddr.sin_port:=htons(1273);
-  ServAddr.sin_addr.S_addr:=inet_addr('127.0.0.1');
+  IP:=form1.edit1.text;
+  ServAddr.sin_addr.S_addr:=inet_addr(PAnsiChar(IP));
 end;
 
 function TryConnect:boolean;
@@ -677,46 +765,134 @@ begin
    repeat
      inc(i);
      sleep(500);
-   until (connect(Sender,sockaddr(ServAddr),sizeof(ServAddr))<>SOCKET_ERROR) or (i>5);
-   if i>5 then result:=true
-          else result:=false;
+     //showmessage('connecting1'+inttostr(i));
+     re:=connect(Sender,sockaddr(ServAddr),sizeof(ServAddr));
+     //showmessage('connecting2'+inttostr(i));
+
+   until ((re<>SOCKET_ERROR) or (i>5));
+   if re<>SOCKET_ERROR then result:=true
+                       else begin result:=false;showmessage(inttostr(re));end;
 end;
 
 begin
+   showmessage('CLIENT START');
    try
      //Initial Socket.
-     InitialWSA;
-     InitialSocket;
-     SetServInfo;
+     InitFlag:=InitialWSA and
+               InitialSocket;
+
    except
      showmessage('Initial Network Failed.');
    end;
-   if not(TryConnect) then
+
+   if InitFlag=true then
      begin
-       showmessage('Connect to Player failed!');
-       form1.Button2.Click;
-     end;
+        SetServInfo;
+        //showmessage('INFO SETTED');
+        if not(TryConnect) then
+        begin
+          showmessage('Connect to Player failed!');
+          shutdown(Sender,SD_BOTH);
+          closeSocket(Sender);
+          form1.Button2.Click;
+        end
+       else
+
+         begin
+           //CONNECTED.
+           //=================================================
+           //===================CORE==========================
+           //=================================================
+           showmessage('Connect to player'+form1.edit1.text+' Successfully!');
+           PlayerIP:=form1.edit1.text;
+           //Send
+           send(Sender,PlayerIP,sizeof(PlayerIP),0);
+           recv(Sender,RequestRply,sizeof(RequestRply),0);
+
+           if RequestRply=Agree then showmessage('APPROCED');
+           if RequestRply=DisAgree then showmessage('NO APPROVED');
+
+           if RequestRply=Agree then
+
+               repeat
+
+                  //Player's turn.
+                  SetPlayerTurn;
+
+                  repeat
+                  until GetMessage(msg1,0,0,0);
+
+                  p:=PTQUEINFO(msg1.wParam);
+
+                  //After finished. Send player's question.
+                  if p^.p=1 then
+                     send(Sender,p^.GameInfo,sizeof(p^.GameInfo),0);
+                  dispose(p);
+
+                  //Receive oppo's answer.
+                  new(p);
+                  recv(Sender,p^.result,sizeof(p^.result),0);
+                  if p^.result then showmessage('Oppo answers your question ok')
+                               else showmessage('Oppo answers your question bad');
+                  //Oppo's turn.
+                  SetOppoTurn(NowGame);
+
+                  repeat
+
+                  until GetMessage(msg1,0,0,0);
+
+                  //Send Player's answer.
+                  if p^.p=2 then
+                     send(Sender,p^.result,sizeof(p^.result),0);
+                  dispose(p);
+
+         until (DestThreadID<>CliSocketID);
+         //Agree end;
+
+         //Connected end;
+         end
+
+     //Init true end;
+     end
+   else
+       begin
+          showmessage('Start connect service failed!');
+          shutdown(Sender,SD_BOTH);
+          closeSocket(Sender);
+          form1.Button2.Click;
+       end;
+
+       //Client Socket end.
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
+var
+  unbind:boolean;
 begin
-   CliSocketHandle:=CreateThread(nil,0,@CliSocketThread,nil,0,CliSocketID);
-   DestThreadID:=CliSocketID;
+   button1.Enabled:=false;
+   Button2.Enabled:=true;
    //as the accept() function is hang up at ServSocket thread.
    //We MUST EXIT THREAD Directly.
-   TerminateThread(ServSocketHandle,0);
 
-   button1.Enabled:=false;
-   button2.Enabled:=true;
+  // repeat
+
+   //until (CloseHandle(ServSocketHandle)<>false);
+
+   CliSocketHandle:=CreateThread(nil,0,@CliSocketThread,nil,0,CliSocketID);
+   DestThreadID:=CliSocketID;
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
+   //as the accept() function is hang up at CliSocket thread.
+   //We MUST EXIT THREAD Directly.
+   button2.Enabled:=false;
+   button1.Enabled:=true;
+   repeat
+   until (CloseHandle(CliSocketHandle)<>false);
+
    ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
    DestThreadID:=ServSocketID;
-    //as the accept() function is hang up at CliSocket thread.
-   //We MUST EXIT THREAD Directly.
-   TerminateThread(CliSocketHandle,0);
    edit1.Text:='';
    button2.enabled:=false;
    button1.Enabled:=true;
@@ -734,8 +910,9 @@ begin
   Agree:='YES';
   DisAgree:='NO';
   PenActsCounts:=0;
-  ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
-  DestThreadID:=ServSocketID;
+  InitialCanvas;
+   ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
+   DestThreadID:=ServSocketID;
 
 end;
 
