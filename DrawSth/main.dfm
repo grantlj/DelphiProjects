@@ -4,7 +4,7 @@ object Form1: TForm1
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'DrawSomething'
-  ClientHeight = 517
+  ClientHeight = 549
   ClientWidth = 722
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -32,15 +32,15 @@ object Form1: TForm1
     Caption = 'Key:'
   end
   object Label3: TLabel
-    Left = 414
+    Left = 438
     Top = 95
-    Width = 275
-    Height = 33
+    Width = 235
+    Height = 28
     Caption = 'INFORMATIONS HERE!'
     Color = clRed
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clRed
-    Font.Height = -27
+    Font.Height = -23
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentColor = False
@@ -48,12 +48,25 @@ object Form1: TForm1
   end
   object Image1: TImage
     Left = 24
-    Top = 144
+    Top = 176
     Width = 673
     Height = 365
     OnMouseDown = Image1MouseDown
     OnMouseMove = Image1MouseMove
     OnMouseUp = Image1MouseUp
+  end
+  object Label4: TLabel
+    Left = 40
+    Top = 135
+    Width = 622
+    Height = 35
+    Caption = 'SCORE:   YOU   0              :               0    OPPO'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clNavy
+    Font.Height = -29
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
   end
   object Edit1: TEdit
     Left = 104
@@ -95,6 +108,7 @@ object Form1: TForm1
     Width = 305
     Height = 34
     Caption = 'Draw!'
+    Enabled = False
     TabOrder = 4
     OnClick = Button4Click
   end

@@ -1,9 +1,11 @@
 {Project Name   : DrawSth
  Version        : 1.0
  Project Start  : 2013/11/5
- Project Finish : 2013/11/??
- Author        : Grant Liu
+ Project Finish : 2013/11/9
+ Author         : Grant Liu
  Design for Ivy Hu.
+ History:
+ 2013/11/9      :*First version. Complete basic functions.
 }
 unit main;
 
@@ -72,6 +74,7 @@ type
     RadioButton1: TRadioButton;
     RadioButton2: TRadioButton;
     Image1: TImage;
+    Label4: TLabel;
     procedure Button4Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -102,6 +105,18 @@ type
       procedure Execute;override;
       //procedure RewriteCanvasByActs(x:TACTS;s:longint);
       procedure RewriteCanvasByActs;
+  end;
+
+  TSetOppo=class(TThread)
+    protected
+      procedure Execute;override;
+      procedure SetOppoTurn;
+  end;
+
+  TSetPlayer=class(TThread)
+    protected
+      procedure Execute;override;
+      procedure SetPlayerTurn;
   end;
 
 
@@ -150,11 +165,21 @@ var
   ServSocketHandle,ServSocketID:DWORD;
   CliSocketHandle,CliSocketID:DWORD;
   CliSocketReady,ServSocketReady:boolean;
+  MainHandle:DWORD;
   ServMode:boolean;
-  DestThreadID:DWORD;
+  DestThreadID,DestThreadHandle:DWORD;
+  PointInfo:record
+    you:integer;
+    oppo:integer;
+  end;
 
+procedure SetScore(a:integer;b:integer);
+begin
+  PointInfo.you:=a;
+  PointInfo.oppo:=b;
+  form1.Label4.Caption:='SCORE:   YOU   '+inttostr(PointInfo.you)+'              :               '+inttostr(PointInfo.oppo)+'    OPPO';
+end;
 //Show Lives info.
-
 
 procedure ShowLives(x:integer);
 
@@ -216,7 +241,6 @@ begin
   // Synchronize(RewriteCanvasByActs(NowGame.PenActs,NowGame.s));
   Synchronize(RewriteCanvasByActs);
 end;
-
 
 //Button 4 is the KEY BUTTON. Save its statue is very important.
 procedure SetBtn4(x:integer);
@@ -329,64 +353,7 @@ end;
 
 
 //Initail for Opposite's turn.
-procedure SetOppoTurn(NowGame:TGameInfo);
-
-procedure SetButtonsCondition;
-begin
-   with form1 do
-     begin
-       Edit2.Enabled:=true;
-       ComboBox1.Enabled:=false;
-       RadioButton1.Enabled:=false;
-       RadioButton2.Enabled:=false;
-       Button7.Enabled:=false;
-       Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_OPPO);
-       Button5.Enabled:=false;
-       Button6.Enabled:=true;
-       InitialCanvas;
-       Image1.Enabled:=true;
-     end;
-end;
-
-begin
-
-  //RewriteCanvasByActs(NowGame.PenActs,NowGame.s);
-  form1.Label3.Caption:=PlayerIP+'is Drawing....';
-  TMyThread.Create;
-
-  SetButtonsCondition;
-  //Lives:=3;
- // ShowLives(Lives);
-
-end;
-
-
-//Initial for Player's turn.
-procedure SetPlayerTurn;
-
-procedure SetButtonsCondition;
-begin
-   with form1 do
-     begin
-       Edit2.Enabled:=true;
-       ComboBox1.Enabled:=true;
-       RadioButton1.Enabled:=true;
-       RadioButton2.Enabled:=true;
-       Button7.Enabled:=true;
-       Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_PLAYER);
-       Button5.Enabled:=true;
-       Button6.Enabled:=true;
-       InitialCanvas;
-       Image1.Enabled:=true;
-     end;
-end;
-
-begin
-  SetButtonsCondition;
-  ClearPenActs;
-  form1.InitialCanvas;
-end;
-
+//procedure SetOppoTurn(NowGame:TGameInfo);
 
 //PlayerComplete:   Player complete answer.
 //PlayerSubmit  :   Player complete question.
@@ -403,14 +370,14 @@ var
 begin
   if win then
     begin
-      label3.Caption:='YOU WIN....';
+      label3.Caption:='YOU WIN....YOUR TURN.';
     end
   else
     begin
-      label3.Caption:='YOU LOST...';
+      label3.Caption:='YOU LOST...YOUR TURN.';
     end;
     //Post Message to thread.
-
+    ClearPenActs;
     new(quetmp);
     quetmp^.p:=2;
     quetmp^.result:=win;
@@ -474,22 +441,6 @@ begin
     begin
       //Do Nothing...
     end;
-
-  {if ReadyToDraw=false then
-     begin
-       SetBtn4(BTN4_STANDBY_SUBMIT_PLAYER);
-       Button5.Enabled:=true;
-       Button6.Enabled:=true;
-       Button7.Enabled:=true;
-       Edit2.Enabled:=true;
-       ComboBox1.Enabled:=true;
-       RadioButton1.Enabled:=true;
-       RadioButton2.Enabled:=true;
-       ReadyToDraw:=true;
-       Image1.Enabled:=true;
-       InitialCanvas;
-     end; }
-
 end;
 
 //Clear Button.
@@ -507,7 +458,8 @@ begin
    NowGame.s:=PenActsCounts;
    NowGame.PenActs:=PenActs;
    NowGame.key:=Edit2.Text;
-   SetOppoTurn(NowGame);
+   //SetOppoTurn(NowGame);
+    TSetOppo.Create;
   //RewriteCanvasByActs(PenActsCounts);
 end;
 
@@ -579,12 +531,91 @@ begin
 end;
 
 
-  {****************************************************
+//============================================
+//Use thread to handle SetOppo!!!!!!!!!!!
+//============================================
+procedure TSetOppo.SetOppoTurn;
+procedure SetButtonsCondition;
+begin
+   with form1 do
+     begin
+       Edit2.Enabled:=true;
+       Edit2.Text:='';
+       ComboBox1.Enabled:=false;
+       RadioButton1.Enabled:=false;
+       RadioButton2.Enabled:=false;
+       Button7.Enabled:=false;
+       Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_OPPO);
+
+       Button6.Enabled:=true;
+       ClearPenActs;
+       InitialCanvas;
+       Image1.Enabled:=false;
+       Button5.Enabled:=false;
+     end;
+end;
+
+begin
+
+  form1.Label3.Caption:=PlayerIP+' is Drawing....';
+  TMyThread.Create;
+
+  SetButtonsCondition;
+
+end;
+
+procedure TSetOppo.Execute;
+begin
+  Synchronize(SetOppoTurn);
+end;
+
+
+//===============================================
+//Use thread to handle set player.
+//===============================================
+procedure TSetPlayer.SetPlayerTurn;
+procedure SetButtonsCondition;
+begin
+   with form1 do
+     begin
+       Label3.Caption:='YOUR TURN...';
+       Edit2.Enabled:=true;
+       Edit2.Text:='';
+       ComboBox1.Enabled:=true;
+       RadioButton1.Enabled:=true;
+       RadioButton2.Enabled:=true;
+       Button7.Enabled:=true;
+       Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_PLAYER);
+       Button5.Enabled:=true;
+       Button6.Enabled:=true;
+       ClearPenActs;
+       InitialCanvas;
+       Image1.Enabled:=true;
+       Image1.Enabled:=true;
+       Button5.Enabled:=true;
+     end;
+end;
+
+begin
+  SetButtonsCondition;
+  ClearPenActs;
+  form1.InitialCanvas;
+end;
+
+
+procedure TSetPlayer.Execute;
+begin
+  Synchronize(SetPlayerTurn);
+end;
+
+{****************************************************
    Initial Network.                                   *
    We use Winsock API here.                           *
                                                       *
    ****************************************************
   }
+
+
 
 procedure ServSocketThread;
 var
@@ -601,6 +632,7 @@ var
   p:PTQUEINFO;
   InitFlag:boolean;
   unbind:boolean;
+  q:TQUEINFO;
 
 function InitialWSA:boolean;
 begin
@@ -675,7 +707,6 @@ begin
           showmessage('Serv socket started.');
           CliAddrLen:=sizeof(CliAddr);
           Recever:=accept(Self,@CliAddr,@CliAddrLen);
-          showmessage('RECEIVED');
           repeat
             recv(Recever,PlayerIP,sizeof(PlayerIP),0);
           until PlayerIP<>'';
@@ -690,34 +721,97 @@ begin
 
             repeat
               //Receive oppo's question.
+              //showmessage('recving oppo game');
+              form1.Label3.caption:='Waiting for question...';
               recv(Recever,NowGame,sizeof(NowGame),0);
+              //showmessage('recving oppo game ok');
+              form1.Label3.Caption:='Get question successfully...';
               //showmessage(inttostr(NowGame.s));
               //Get info from the opposite.
               //So we initial the turn for the opposite. and wait for the answer message.
 
-              SetOppoTurn(NowGame);
+              TSetOppo.CREATE;
+             //PostThreadMessage(MainHandle,0,MSG_SET_OPPO_TURN,0);
 
               repeat
               until GetMessage(msg1,0,0,0);
+
               p:=PTQUEINFO(msg1.wParam);
 
+              form1.Label3.Caption:='Sending your answer...';
+              //showmessage('ready to send answer');
               //Send player's answer.
               if p^.p=2 then
-                   send(Recever,p^.result,sizeof(p^.result),0);
-              dispose(p);
+                   begin
+                     send(Recever,p^.result,sizeof(p^.result),0);
+                     form1.Label3.Caption:='Send your answer successfully...';
+                     if p^.result then
+                       begin
+                         form1.Label3.Caption:='You answers oppo question correctly...';
+                         SetScore(PointInfo.you+1,PointInfo.oppo+2);
+                         showmessage('You answer oppo question correctly! You get 1 points.');
+                       end
+                     else
+                       begin
+                        form1.Label3.Caption:='You answers oppo question wrong...';
+                         SetScore(PointInfo.you,PointInfo.oppo+1);
+                         showmessage('You answer oppo question wrong! You get 0 points.');
+                       end;
 
+                     dispose(p);
+                   end;
+
+              //Player's turn.
               //Set player's question.
 
-              SetPlayerTurn;
+              //SetPlayerTurn;
+              //showmessage('Player turn ready');
+              form1.Label3.Caption:='Starting your turn...';
+              TSetPlayer.Create;
+             // PostThreadMessage(MainHandle,0,MSG_SET_PLAYER_TURN,0);
 
               repeat
               until GetMessage(msg1,0,0,0);
 
+              form1.Label3.Caption:='Sending your question...';
               //Send Player's question.
               p:=PTQUEINFO(msg1.wParam);
               if p^.p=1 then
-                 send(Recever,p^.GameInfo,sizeof(p^.GameInfo),0);
-              dispose(p);
+                 begin
+                   send(Recever,p^.GameInfo,sizeof(p^.GameInfo),0);
+                   //showmessage('send player info ok');
+                   form1.Label3.Caption:='Send your question successfully...';
+                   dispose(p);
+                 end;
+
+             //Get oppo's reply.
+              // showmessage('ready to get reply');
+                 form1.Label3.Caption:='Waiting for reply...';
+                 //new(p);
+                 repeat
+                   recv(Recever,q,sizeof(q),0);
+                   //showmessage('Strange!?');
+                   //showmessage(inttostr(q.p));
+                 until q.p=2;
+                  if q.p=2 then
+                   begin
+                    if q.result then
+                       begin
+                         form1.Label3.Caption:='Oppo answers your question correctly...';
+                         SetScore(PointInfo.you+2,PointInfo.oppo+1);
+                         showmessage('Oppo answer your question correctly! You get 2 points.');
+                       end
+                       //Form1.Label3.Caption:='Oppo answers your question correctly...'
+                       //showmessage('SERV :Oppo answers your question ok')
+                    else
+                      begin
+                        form1.Label3.Caption:='Oppo answers your question wrong...';
+                        SetScore(PointInfo.you+1,PointInfo.oppo);
+                        showmessage('Oppo answer your question wrong! You get 1 points.');
+                      end;
+                   end;
+              //dispose(p);
+             //Player's turn end.
          until (DestThreadID<>ServSocketID);
      end
      else
@@ -753,6 +847,8 @@ var
   InitFlag:boolean;
   re:integer;
   RequestRply:string[15];
+  round:integer;
+  q:TQUEINFO;
 
 
 function InitialWSA:boolean;
@@ -801,7 +897,7 @@ begin
 end;
 
 begin
-   showmessage('CLIENT START');
+   //showmessage('CLIENT START');
    try
      //Initial Socket.
      InitFlag:=InitialWSA and
@@ -829,55 +925,92 @@ begin
            //=================================================
            //===================CORE==========================
            //=================================================
-           showmessage('Connect to player'+form1.edit1.text+' Successfully!');
+           //showmessage('Connect to player'+form1.edit1.text+' Successfully!');
            PlayerIP:=form1.edit1.text;
            //Send
            send(Sender,PlayerIP,sizeof(PlayerIP),0);
            recv(Sender,RequestRply,sizeof(RequestRply),0);
 
-           if RequestRply=Agree then showmessage('APPROCED');
-           if RequestRply=DisAgree then showmessage('NO APPROVED');
+           if RequestRply=Agree then showmessage('Your request is approved.');
+           if RequestRply=DisAgree then showmessage('Your request is rejected.');
 
            if RequestRply=Agree then
-
+           begin
                repeat
-
+                   //showmessage('Ready to set player turn');
+                    form1.Label3.Caption:='Starting your turn...';
+                   //round:=0;
                   //Player's turn.
-                  SetPlayerTurn;
-
+                  //inc(round);
+                  TSetPlayer.create;
+                  //PostThreadMessage(MainHandle,0,MSG_SET_PLAYER_TURN,0);
                   repeat
                   until GetMessage(msg1,0,0,0);
+
 
                   p:=PTQUEINFO(msg1.wParam);
 
                   //After finished. Send player's question.
                   if p^.p=1 then
-                     send(Sender,p^.GameInfo,sizeof(p^.GameInfo),0);
-                  dispose(p);
+                     begin
+                      // showmessage(inttostr(round)+' to send!');
+                      //showmessage('get player question. ready to send');
+                       form1.Label3.Caption:='Sending your question...';
+                       send(Sender,p^.GameInfo,sizeof(p^.GameInfo),0);
+                       form1.Label3.Caption:='Send your question successfully...';
+                       dispose(p);
+                     end;
 
                   //Receive oppo's answer.
                   new(p);
+                  //showmessage('ready to get oppo answer');
+                  form1.Label3.Caption:='Waiting for reply...';
                   recv(Sender,p^.result,sizeof(p^.result),0);
-                  if p^.result then showmessage('Oppo answers your question ok')
-                               else showmessage('Oppo answers your question bad');
+                 // showmessage('get oppo answer successful');
+                  if p^.result then
+                                 begin
+                                   form1.Label3.Caption:='Oppo answers your question correctly...';
+                                   SetScore(PointInfo.you+2,PointInfo.oppo+1);
+                                   showmessage('Oppo answer your question correctly! You get 2 points.');
+                                 end
+                               else
+                                  begin
+                                    form1.Label3.Caption:='Oppo answers your question wrong...';
+                                    SetScore(PointInfo.you+1,PointInfo.oppo);
+                                    showmessage('Oppo answer your question wrong! You get 1 points.');
+                                  end;
                   //Oppo's turn.
-
+                  //Get Oppo's question.
+                 //showmessage('ready to get question');
+                  form1.Label3.Caption:='Waiting for question...';
                   recv(Sender,NowGame,sizeof(NowGame),0);
-                  SetOppoTurn(NowGame);
+                  form1.Label3.Caption:='Get question successfully...';
+                  TSetOppo.Create;
+                  //PostThreadMessage(MainHandle,0,MSG_SET_OPPO_TURN,0);
 
                   repeat
 
                   until GetMessage(msg1,0,0,0);
 
                   p:=PTQUEINFO(msg1.wParam);
+                  q.p:=p^.p;
+                  q.GameInfo:=p^.GameInfo;
+                  q.result:=p^.result;
                   //Send Player's answer.
                   if p^.p=2 then
-                     send(Sender,p^.result,sizeof(p^.result),0);
-                  dispose(p);
-
+                     begin
+                       //showmessage('get player answer.ready to send');
+                       form1.Label3.Caption:='Sending your answer...';
+                       send(Sender,q,sizeof(q),0);
+                      // showmessage('Answer SENDED!!!!'+booltostr(p^.result));
+                        //showmessage('player answer send ok');
+                       form1.Label3.Caption:='Send your answer successfully...';
+                       dispose(p);
+                     end;
+                  //Oppo's turn end.
          until (DestThreadID<>CliSocketID);
          //Agree end;
-
+         end
          //Connected end;
          end
 
@@ -898,6 +1031,7 @@ procedure TForm1.Button1Click(Sender: TObject);
 var
   unbind:boolean;
 begin
+   edit1.Enabled:=false;
    button1.Enabled:=false;
    Button2.Enabled:=true;
    //as the accept() function is hang up at ServSocket thread.
@@ -909,12 +1043,14 @@ begin
 
    CliSocketHandle:=CreateThread(nil,0,@CliSocketThread,nil,0,CliSocketID);
    DestThreadID:=CliSocketID;
+   DestThreadHandle:=ServSocketHandle;
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
    //as the accept() function is hang up at CliSocket thread.
    //We MUST EXIT THREAD Directly.
+   Edit1.Enabled:=true;
    button2.Enabled:=false;
    button1.Enabled:=true;
    repeat
@@ -922,6 +1058,7 @@ begin
 
    ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
    DestThreadID:=ServSocketID;
+   DestThreadHandle:=ServSocketHandle;
    edit1.Text:='';
    button2.enabled:=false;
    button1.Enabled:=true;
@@ -940,6 +1077,8 @@ begin
   DisAgree:='NO';
   PenActsCounts:=0;
   InitialCanvas;
+  PointInfo.you:=0;
+  PointInfo.oppo:=0;
   ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
   DestThreadID:=ServSocketID;
 
