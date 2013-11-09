@@ -3,7 +3,7 @@ object Form1: TForm1
   Top = 0
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
-  Caption = 'DrawSomething V1.0.1001'
+  Caption = 'DrawSomething V1.0.1004'
   ClientHeight = 549
   ClientWidth = 722
   Color = clBtnFace

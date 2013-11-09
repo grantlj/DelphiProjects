@@ -5,6 +5,7 @@
  Author         : Grant Liu
  Design for Ivy Hu.
  History:
+ Build 1004      2013/11/10     :*Improve stability of program.
  Build 1002      2013/11/9      :*Emergency bug fixed.
  Bulid 1001      2013/11/9      :*First version. Complete basic functions.
 }
@@ -401,7 +402,7 @@ begin
 
     repeat
 
-    until PostThreadMessage(DestThreadID,0,longint(quetmp),0);
+    until PostThreadMessage(DestThreadID,0,longint(quetmp),8888);
 
    // SetPlayerTurn;
 end;
@@ -412,18 +413,26 @@ var
   NowGame:TGameInfo;
   quetmp:PTQUEINFO;
 begin
-  NowGame.PenActs:=PenActs;
-  NowGame.s:=PenActsCounts;
-  NowGame.key:=edit2.text;
-  //Post Message to therad.
-  new(quetmp);
-  quetmp^.p:=1;
-  quetmp^.GameInfo:=NowGame;
-  //showmessage(inttostr(quetmp^.GameInfo.s));
- // ReWriteCanvasByActs(quetmp^.GameInfo.PenActs,quetmp^.GameInfo.s);
-  repeat
+  if edit2.Text<>'' then
+    begin
+     NowGame.PenActs:=PenActs;
+     NowGame.s:=PenActsCounts;
+     NowGame.key:=edit2.text;
+    //Post Message to therad.
+    new(quetmp);
+    quetmp^.p:=1;
+    quetmp^.GameInfo:=NowGame;
+    //showmessage(inttostr(quetmp^.GameInfo.s));
+    // ReWriteCanvasByActs(quetmp^.GameInfo.PenActs,quetmp^.GameInfo.s);
+    repeat
 
-  until PostThreadMessage(DestThreadID,0,longint(quetmp),0);
+    until PostThreadMessage(DestThreadID,0,longint(quetmp),8888);
+    end
+  else
+    begin
+      Setbtn4(BTN4_STANDBY_SUBMIT_PLAYER);
+      MessageBox(form1.Handle,'You must enter a valid key!','Submit Error',MB_ICONERROR);
+    end;
 end;
 
 
@@ -450,8 +459,9 @@ begin
 
   if btn4_status=BTN4_STANDBY_SUBMIT_PLAYER then
     begin
-      PlayerSubmit(PenActs,PenActsCounts);
       SetBtn4(BTN4_IDLE);
+      PlayerSubmit(PenActs,PenActsCounts);
+
     end;
 
   if btn4_status=BTN4_IDLE then
@@ -652,6 +662,7 @@ var
   InitFlag:boolean;
   unbind:boolean;
   q:TQUEINFO;
+  GetMsg:boolean;
 
 function InitialWSA:boolean;
 begin
@@ -776,7 +787,8 @@ begin
              //PostThreadMessage(MainHandle,0,MSG_SET_OPPO_TURN,0);
 
               repeat
-              until GetMessage(msg1,0,0,0);
+                GetMsg:=GetMessage(msg1,0,0,0);
+              until GetMsg and (msg1.lparam=8888);
 
               p:=PTQUEINFO(msg1.wParam);
 
@@ -813,7 +825,8 @@ begin
              // PostThreadMessage(MainHandle,0,MSG_SET_PLAYER_TURN,0);
 
               repeat
-              until GetMessage(msg1,0,0,0);
+                GetMsg:=GetMessage(msg1,0,0,0);
+              until GetMsg and (msg1.lparam=8888);
 
               form1.Label3.Caption:='Sending your question...';
               //Send Player's question.
@@ -893,6 +906,7 @@ var
   RequestRply:string[15];
   round:integer;
   q:TQUEINFO;
+  GetMsg:boolean;
 
 
 function InitialWSA:boolean;
@@ -1001,7 +1015,8 @@ begin
                   TSetPlayer.create;
                   //PostThreadMessage(MainHandle,0,MSG_SET_PLAYER_TURN,0);
                   repeat
-                  until GetMessage(msg1,0,0,0);
+                    GetMsg:=GetMessage(msg1,0,0,0);
+                  until GetMsg and (msg1.lParam=8888);
 
                   p:=PTQUEINFO(msg1.wParam);
 
@@ -1045,8 +1060,8 @@ begin
                   //PostThreadMessage(MainHandle,0,MSG_SET_OPPO_TURN,0);
 
                   repeat
-
-                  until GetMessage(msg1,0,0,0);
+                    GetMsg:=GetMessage(msg1,0,0,0);
+                  until GetMsg and (msg1.lParam=8888);
 
                   p:=PTQUEINFO(msg1.wParam);
                   q.p:=p^.p;
