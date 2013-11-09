@@ -13,7 +13,8 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,JPEG,winsock2;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,JPEG,winsock2,
+  shellapi;
 
 const
   MAX_STEPS=80000;
@@ -91,6 +92,7 @@ type
     procedure ComboBox1Change(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
 
   private
     { Private declarations }
@@ -100,6 +102,7 @@ type
     procedure PlayerSubmit(PenActs:TACTS;PenActsCounts:longint);
   end;
 
+  //Use Multi-Thread class to draw VCL.
   TMyThread=class(TThread)
     protected
       procedure Execute;override;
@@ -107,6 +110,7 @@ type
       procedure RewriteCanvasByActs;
   end;
 
+  //Use Multi-Thread class to handle game turn.
   TSetOppo=class(TThread)
     protected
       procedure Execute;override;
@@ -135,6 +139,7 @@ implementation
 
 
 const
+  //Button4's actions here.
   BTN4_STANDBY_DRAW=1;
   BTN4_STANDBY_SUBMIT_PLAYER=2;
   BTN4_STANDBY_SUBMIT_OPPO=3;
@@ -159,6 +164,7 @@ var
    NetWork varities defined here.
    *********************************
   }
+
   PlayerIP:string[15];
   Agree:string[15];
   DisAgree:string[15];
@@ -173,6 +179,13 @@ var
     oppo:integer;
   end;
 
+//Show Runtime errors.
+procedure ShowError(x:string);
+begin
+   MessageBox(form1.Handle,pwidechar(x),'Runtime Error',MB_ICONERROR);
+end;
+
+//Refresh score.
 procedure SetScore(a:integer;b:integer);
 begin
   PointInfo.you:=a;
@@ -181,10 +194,11 @@ begin
 end;
 //Show Lives info.
 
+//Refresh lives.
 procedure ShowLives(x:integer);
 
 begin
-  if x<0 then
+  if x<=0 then
      begin
        MessageBox(form1.Handle,'You lost all your lives!:(','You Lost!',MB_ICONERROR);
        Form1.InitialCanvas;
@@ -226,12 +240,12 @@ begin
        end;
 
   ShowMessage('Time for you to guess!');
-  form1.ComboBox1.Enabled:=true;
-  form1.RadioButton1.Enabled:=true;
-  form1.RadioButton2.Enabled:=true;
+  //form1.ComboBox1.Enabled:=true;
+  //form1.RadioButton1.Enabled:=true;
+  //form1.RadioButton2.Enabled:=true;
   form1.Button6.Enabled:=true;
-  form1.Button5.Enabled:=true;
-  form1.Button7.Enabled:=true;
+ // form1.Button5.Enabled:=true;
+ // form1.Button7.Enabled:=true;
   Lives:=3;
   ShowLives(Lives);
 end;
@@ -253,13 +267,14 @@ begin
     form1.Button4.Caption:='Submit!';
 end;
 
-//GetPenState is to refresh the PenState.
+//SetPenMode: eraser or pen.
 procedure SetPenMode(isPen:boolean);
 begin
   if isPen then form1.Image1.Cursor:=crCross
            else form1.Image1.Cursor:=crNoDrop;
 end;
 
+//GetPenState is to refresh the PenState.
 procedure GetPenState;
 begin
   with form1 do
@@ -410,7 +425,7 @@ begin
 end;
 
 
-
+//Button4 click statue....
 procedure TForm1.Button4Click(Sender: TObject);
 begin
 
@@ -425,7 +440,7 @@ begin
           end
         else
           begin
-            MessageBox(form1.Handle,'Congratulation!You got the correct answer!:)','Complete!',MB_ICONWARNING);
+            MessageBox(form1.Handle,'Congratulation!You got the correct answer!:)','Complete!',MB_ICONINFORMATION);
             form1.PlayerComplete(true);
             SetBtn4(BTN4_IDLE);
           end;
@@ -539,6 +554,11 @@ procedure SetButtonsCondition;
 begin
    with form1 do
      begin
+
+       ClearPenActs;
+       InitialCanvas;
+       Image1.Enabled:=false;
+       Button5.Enabled:=false;
        Edit2.Enabled:=true;
        Edit2.Text:='';
        ComboBox1.Enabled:=false;
@@ -548,16 +568,12 @@ begin
        Button4.Enabled:=true;SetBtn4(BTN4_STANDBY_SUBMIT_OPPO);
 
        Button6.Enabled:=true;
-       ClearPenActs;
-       InitialCanvas;
-       Image1.Enabled:=false;
-       Button5.Enabled:=false;
      end;
 end;
 
 begin
 
-  form1.Label3.Caption:=PlayerIP+' is Drawing....';
+  form1.Label3.Caption:='Oppo is drawing....';
   TMyThread.Create;
 
   SetButtonsCondition;
@@ -617,6 +633,7 @@ end;
 
 
 
+
 procedure ServSocketThread;
 var
   wVersionRequired:word;
@@ -640,7 +657,8 @@ begin
     then
       begin
         result:=false;
-        showmessage(inttostr(WSAGetLastError));
+       // showmessage(inttostr(WSAGetLastError));
+        ShowError('Network Error:'+inttostr(WSAGetLastError));
       end
     else
       result:=true;
@@ -652,10 +670,24 @@ begin
   if Self=INVALID_SOCKET then
     begin
       result:=false;
-      showmessage(inttostr(WSAGetLastError));
+      //showmessage(inttostr(WSAGetLastError));
+      ShowError('Network Error:'+inttostr(WSAGetLastError));
     end
   else
     result:=true;
+end;
+
+procedure RestartProgram(FullPath,ExeName:string);
+var
+  f:textfile;
+begin
+  assignfile(f,'tmp.bat');
+  rewrite(f);
+  writeln(f,'taskkill /f /IM '+ExeName);
+  //writeln(f,'pause');
+  writeln(f,FullPath);
+  closefile(f);
+  winexec(pAnsichar('tmp.bat'), SW_HIDE);
 end;
 
 function BindServInfo:boolean;
@@ -665,10 +697,16 @@ begin
   ServAddr.sin_addr.S_addr:=htonl(INADDR_ANY);
  if bind(Self,SockAddr(ServAddr),sizeof(ServAddr))=SOCKET_ERROR then
    begin
-   result:=false;
-   showmessage(inttostr(WSAGetLastError));
+    result:=false;
+   //showmessage(inttostr(WSAGetLastError));
+    ShowError('Network Error:'+inttostr(WSAGetLastError));
+    //Restart Application.
+    //In multi-thread program...
+    //we MUST USE .BAT!
+    RestartProgram(Application.ExeName,ExtractFileName(Application.ExeName));
    end
  else
+
    result:=true;
 end;
 
@@ -677,6 +715,7 @@ begin
   if listen(Self,1)=SOCKET_ERROR then
     begin
       result:=false;
+      ShowError('Network Error:'+inttostr(WSAGetLastError));
       //showmessage(inttostr(WSAGetLastError));
     end
   else
@@ -684,11 +723,11 @@ begin
 end;
 
 begin
-        // unbind:=true;
-        // setsockopt(Self, SOL_SOCKET,SO_REUSEADDR,PAnsiChar(unbind),sizeof(unbind));
-         //CloseSocket(Self);
-       //  setsockopt(Recever,SOL_SOCKET,SO_REUSEADDR,PAnsiChar(unbind),sizeof(unbind));
-         //CloseSocket(Recever);
+      {  unbind:=true;
+         setsockopt(Self, SOL_SOCKET,SO_REUSEADDR,PAnsiChar(unbind),sizeof(unbind));
+         CloseSocket(Self);
+       setsockopt(Recever,SOL_SOCKET,SO_REUSEADDR,PAnsiChar(unbind),sizeof(unbind));
+         CloseSocket(Recever);   }
 
    InitFlag:=false;
    try
@@ -698,7 +737,8 @@ begin
                BindServInfo     and
                StartListen;
    except
-     showmessage('Initial Network Failed.');
+      ShowError('Network Error:Exceptions when initinal.');
+     //showmessage('Initial Network Failed.');
    end;
      //Yes is 6, No is 7.
 
@@ -747,15 +787,15 @@ begin
                      form1.Label3.Caption:='Send your answer successfully...';
                      if p^.result then
                        begin
-                         form1.Label3.Caption:='You answers oppo question correctly...';
+                         form1.Label3.Caption:='You answer oppo question correctly...';
                          SetScore(PointInfo.you+1,PointInfo.oppo+2);
-                         showmessage('You answer oppo question correctly! You get 1 points.');
+                         showmessage('You answer oppo question correctly! You get 1 point.');
                        end
                      else
                        begin
-                        form1.Label3.Caption:='You answers oppo question wrong...';
+                        form1.Label3.Caption:='You answer oppo question wrong...';
                          SetScore(PointInfo.you,PointInfo.oppo+1);
-                         showmessage('You answer oppo question wrong! You get 0 points.');
+                         showmessage('You answer oppo question wrong! You get 0 point.');
                        end;
 
                      dispose(p);
@@ -799,7 +839,7 @@ begin
                        begin
                          form1.Label3.Caption:='Oppo answers your question correctly...';
                          SetScore(PointInfo.you+2,PointInfo.oppo+1);
-                         showmessage('Oppo answer your question correctly! You get 2 points.');
+                         showmessage('Oppo answers your question correctly! You get 2 points.');
                        end
                        //Form1.Label3.Caption:='Oppo answers your question correctly...'
                        //showmessage('SERV :Oppo answers your question ok')
@@ -807,7 +847,7 @@ begin
                       begin
                         form1.Label3.Caption:='Oppo answers your question wrong...';
                         SetScore(PointInfo.you+1,PointInfo.oppo);
-                        showmessage('Oppo answer your question wrong! You get 1 points.');
+                        showmessage('Oppo answers your question wrong! You get 1 point.');
                       end;
                    end;
               //dispose(p);
@@ -821,8 +861,8 @@ begin
      else
        //Serv Socket Started failed.
        begin
-         showmessage('Serv Socket Started failed.');
-
+         //showmessage('Serv Socket Started failed.');
+         ShowError('Network Error:Server socket started failed.');
          {unbind:=true;
          setsockopt(Self, SOL_SOCKET,SO_REUSEADDR,PAnsiChar(unbind),sizeof(unbind));
          CloseSocket(Self);
@@ -836,6 +876,8 @@ begin
 
 end;
 
+
+//Client Socket thread.
 procedure CliSocketThread;
 var
   wVersionRequired:word;
@@ -855,7 +897,10 @@ function InitialWSA:boolean;
 begin
   if WSAStartup($0101,WSAData)<>0
     then
-      result:=false
+      begin
+        ShowError('Network Error:'+inttostr(WSAGetLastError));
+        result:=false
+      end
     else
       result:=true;
 end;
@@ -864,7 +909,10 @@ function InitialSocket:boolean;
 begin
   Sender:=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
   if Sender=INVALID_SOCKET then
-    result:=false
+    begin
+      result:=false;
+      ShowError('Network Error:'+inttostr(WSAGetLastError));
+    end
   else
     result:=true;
 end;
@@ -884,16 +932,19 @@ var
   i:integer;
 begin
    i:=0;
+   form1.Button2.Enabled:=false;
    repeat
      inc(i);
-     sleep(500);
+     Application.ProcessMessages;
+     sleep(200);
      //showmessage('connecting1'+inttostr(i));
+      form1.Label3.caption:='Attempting to connect: '+inttostr(i);
      re:=connect(Sender,sockaddr(ServAddr),sizeof(ServAddr));
-     //showmessage('connecting2'+inttostr(i));
 
-   until ((re<>SOCKET_ERROR) or (i>5));
-   if re<>SOCKET_ERROR then result:=true
-                       else begin result:=false;showmessage(inttostr(re));end;
+    // showmessage('connecting2'+inttostr(i));
+   until ((re<>SOCKET_ERROR) or (i>1));
+   if re<>SOCKET_ERROR then begin form1.Button2.Enabled:=true;result:=true;end
+                       else begin result:=false;ShowError('Network Error:Failed to connect to oppo.');;end;
 end;
 
 begin
@@ -904,7 +955,9 @@ begin
                InitialSocket;
 
    except
-     showmessage('Initial Network Failed.');
+     //showmessage('Initial Network Failed.');
+    // ShowError('Network Error:'+inttostr(WSAGetLastError));
+     ShowError('Network Error:Exceptions when initinal.');
    end;
 
    if InitFlag=true then
@@ -913,7 +966,7 @@ begin
         //showmessage('INFO SETTED');
         if not(TryConnect) then
         begin
-          showmessage('Connect to Player failed!');
+         // showmessage('Connect to Player failed!');
           shutdown(Sender,SD_BOTH);
           closeSocket(Sender);
           form1.Button2.Click;
@@ -926,6 +979,7 @@ begin
            //===================CORE==========================
            //=================================================
            //showmessage('Connect to player'+form1.edit1.text+' Successfully!');
+          try
            PlayerIP:=form1.edit1.text;
            //Send
            send(Sender,PlayerIP,sizeof(PlayerIP),0);
@@ -946,7 +1000,6 @@ begin
                   //PostThreadMessage(MainHandle,0,MSG_SET_PLAYER_TURN,0);
                   repeat
                   until GetMessage(msg1,0,0,0);
-
 
                   p:=PTQUEINFO(msg1.wParam);
 
@@ -971,17 +1024,18 @@ begin
                                  begin
                                    form1.Label3.Caption:='Oppo answers your question correctly...';
                                    SetScore(PointInfo.you+2,PointInfo.oppo+1);
-                                   showmessage('Oppo answer your question correctly! You get 2 points.');
+                                   showmessage('Oppo answers your question correctly! You get 2 points.');
                                  end
                                else
                                   begin
                                     form1.Label3.Caption:='Oppo answers your question wrong...';
                                     SetScore(PointInfo.you+1,PointInfo.oppo);
-                                    showmessage('Oppo answer your question wrong! You get 1 points.');
+                                    showmessage('Oppo answers your question wrong! You get 1 point.');
                                   end;
                   //Oppo's turn.
                   //Get Oppo's question.
                  //showmessage('ready to get question');
+
                   form1.Label3.Caption:='Waiting for question...';
                   recv(Sender,NowGame,sizeof(NowGame),0);
                   form1.Label3.Caption:='Get question successfully...';
@@ -1000,6 +1054,18 @@ begin
                   if p^.p=2 then
                      begin
                        //showmessage('get player answer.ready to send');
+                       if p^.result then
+                                 begin
+                                   form1.Label3.Caption:='You answer oppo question correctly...';
+                                   SetScore(PointInfo.you+1,PointInfo.oppo+2);
+                                   showmessage('Oppo answer your question correctly! You get 1 point.');
+                                 end
+                               else
+                                  begin
+                                    form1.Label3.Caption:='You answer oppo question wrong...';
+                                    SetScore(PointInfo.you,PointInfo.oppo+1);
+                                    showmessage('You answer oppo question wrong! You get 0 point.');
+                                  end;
                        form1.Label3.Caption:='Sending your answer...';
                        send(Sender,q,sizeof(q),0);
                       // showmessage('Answer SENDED!!!!'+booltostr(p^.result));
@@ -1012,13 +1078,19 @@ begin
          //Agree end;
          end
          //Connected end;
-         end
 
+       except
+          shutdown(Sender,SD_BOTH);
+          closeSocket(Sender);
+          form1.Button2.Click;
+       end;
+       end;
      //Init true end;
      end
    else
        begin
-          showmessage('Start connect service failed!');
+         // showmessage('Start connect service failed!');
+          ShowError('Network Error:Client socket started failed.');
           shutdown(Sender,SD_BOTH);
           closeSocket(Sender);
           form1.Button2.Click;
@@ -1037,9 +1109,9 @@ begin
    //as the accept() function is hang up at ServSocket thread.
    //We MUST EXIT THREAD Directly.
 
-  // repeat
+    repeat
 
-   //until (CloseHandle(ServSocketHandle)<>false);
+    until (CloseHandle(ServSocketHandle)<>false);
 
    CliSocketHandle:=CreateThread(nil,0,@CliSocketThread,nil,0,CliSocketID);
    DestThreadID:=CliSocketID;
@@ -1065,10 +1137,81 @@ begin
 end;
 
 
+procedure TForm1.Button3Click(Sender: TObject);
+procedure LockEverything;
+begin
+  button1.Enabled:=false;button2.Enabled:=false;button3.Enabled:=false;
+  button4.Enabled:=false;button5.Enabled:=false;button6.Enabled:=false;
+  button7.Enabled:=false;
+  ComboBox1.Enabled:=false;
+  Edit1.Enabled:=false;Edit2.Enabled:=false;
+  Image1.Enabled:=false;
+  RadioButton1.Enabled:=false;RadioButton2.Enabled:=false;
+end;
+
+procedure UnLockEverything;
+begin
+  button1.Enabled:=true;button2.Enabled:=true;button3.Enabled:=true;
+  button4.Enabled:=true;button5.Enabled:=true;button6.Enabled:=true;
+  button7.Enabled:=true;
+  ComboBox1.Enabled:=true;
+  Edit1.Enabled:=true;Edit2.Enabled:=true;
+  Image1.Enabled:=true;
+  RadioButton1.Enabled:=true;RadioButton2.Enabled:=true;
+end;
+
+procedure DoDraw;
+var
+  f:textfile;
+  counts,i:longint;
+  x:TACTS;
+  ques:string;
+begin
+  form1.InitialCanvas;
+  LockEverything;
+  assignfile(f,'info.dat');
+  reset(f);
+  readln(f,counts);
+
+ for i:=1 to counts do
+    begin
+      readln(f,x[i].DrawInt);
+      readln(f,x[i].Color);
+      readln(f,x[i].Pix);
+      readln(f,x[i].StartX);readln(f,x[i].StartY);
+      readln(f,x[i].Interval);
+      readln(f,x[i].EndX);readln(f,x[i].EndY);
+    end;
+  readln(f,ques);
+  closefile(f);
+
+  for i:=1 to counts do
+     with Form1.Image1.Canvas do
+       begin
+         if (x[i].DrawInt<>0) and (i<>1) then Sleep(x[i].DrawInt);
+         Pen.Color:=x[i].Color;
+         Pen.Width:=x[i].Pix;
+         MoveTo(x[i].StartX,x[i].StartY);
+         Application.ProcessMessages;
+         Sleep(x[i].Interval);
+         LineTo(x[i].EndX,x[i].EndY);
+       end;
+  showmessage(ques);
+
+end;
+
+begin
+  if not fileexists('info.dat') then
+    showmessage('DrawSth ver1.0')
+  else
+    DoDraw;
+end;
+
 //Initial!Program run from here.
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-
+  if fileexists('tmp.bat') then
+  deletefile('tmp.bat');
   ServMode:=true;
   //ReadyToDraw:=false;
   ComboBox1.Text:='10';

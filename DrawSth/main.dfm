@@ -3,7 +3,7 @@ object Form1: TForm1
   Top = 0
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
-  Caption = 'DrawSomething'
+  Caption = 'DrawSomething V1.0.1001'
   ClientHeight = 549
   ClientWidth = 722
   Color = clBtnFace
@@ -20,9 +20,9 @@ object Form1: TForm1
   object Label1: TLabel
     Left = 24
     Top = 31
-    Width = 52
+    Width = 39
     Height = 13
-    Caption = 'IP Address'
+    Caption = 'Dest IP:'
   end
   object Label2: TLabel
     Left = 24
@@ -101,6 +101,7 @@ object Form1: TForm1
     Height = 25
     Caption = 'About'
     TabOrder = 3
+    OnClick = Button3Click
   end
   object Button4: TButton
     Left = 24
