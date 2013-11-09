@@ -16,7 +16,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,JPEG,winsock2,
-  shellapi;
+  shellapi, IdBaseComponent, IdComponent, IdIPWatch;
 
 const
   MAX_STEPS=80000;
@@ -78,6 +78,7 @@ type
     RadioButton2: TRadioButton;
     Image1: TImage;
     Label4: TLabel;
+    IdIPWatch1: TIdIPWatch;
     procedure Button4Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -642,7 +643,10 @@ end;
                                                       *
    ****************************************************
   }
-
+function GetLocalIP:string;
+begin
+  result:=form1.IdIPWatch1.LocalIP;
+end;
 
 
 
@@ -996,7 +1000,7 @@ begin
            //=================================================
            //showmessage('Connect to player'+form1.edit1.text+' Successfully!');
 
-           PlayerIP:=form1.edit1.text;
+           PlayerIP:=GetLocalIP;
            //Send
            send(Sender,PlayerIP,sizeof(PlayerIP),0);
            recv(Sender,RequestRply,sizeof(RequestRply),0);
@@ -1221,6 +1225,7 @@ end;
 //Initial!Program run from here.
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+ // showmessage(GetLocalIP);
   if fileexists('tmp.bat') then
   deletefile('tmp.bat');
   ServMode:=false;

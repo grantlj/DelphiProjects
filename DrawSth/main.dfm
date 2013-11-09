@@ -205,4 +205,10 @@ object Form1: TForm1
     Left = 672
     Top = 96
   end
+  object IdIPWatch1: TIdIPWatch
+    Active = False
+    HistoryFilename = 'iphist.dat'
+    Left = 672
+    Top = 144
+  end
 end
