@@ -5,7 +5,8 @@
  Author         : Grant Liu
  Design for Ivy Hu.
  History:
- 2013/11/9      :*First version. Complete basic functions.
+ Build 1002      2013/11/9      :*Emergency bug fixed.
+ Bulid 1001      2013/11/9      :*First version. Complete basic functions.
 }
 unit main;
 
@@ -178,6 +179,7 @@ var
     you:integer;
     oppo:integer;
   end;
+
 
 //Show Runtime errors.
 procedure ShowError(x:string);
@@ -935,14 +937,14 @@ begin
    form1.Button2.Enabled:=false;
    repeat
      inc(i);
-     Application.ProcessMessages;
+     //Application.ProcessMessages;
      sleep(200);
      //showmessage('connecting1'+inttostr(i));
       form1.Label3.caption:='Attempting to connect: '+inttostr(i);
      re:=connect(Sender,sockaddr(ServAddr),sizeof(ServAddr));
 
     // showmessage('connecting2'+inttostr(i));
-   until ((re<>SOCKET_ERROR) or (i>1));
+   until ((re<>SOCKET_ERROR) or (i>2));
    if re<>SOCKET_ERROR then begin form1.Button2.Enabled:=true;result:=true;end
                        else begin result:=false;ShowError('Network Error:Failed to connect to oppo.');;end;
 end;
@@ -979,7 +981,7 @@ begin
            //===================CORE==========================
            //=================================================
            //showmessage('Connect to player'+form1.edit1.text+' Successfully!');
-          try
+
            PlayerIP:=form1.edit1.text;
            //Send
            send(Sender,PlayerIP,sizeof(PlayerIP),0);
@@ -1078,12 +1080,6 @@ begin
          //Agree end;
          end
          //Connected end;
-
-       except
-          shutdown(Sender,SD_BOTH);
-          closeSocket(Sender);
-          form1.Button2.Click;
-       end;
        end;
      //Init true end;
      end
@@ -1111,11 +1107,11 @@ begin
 
     repeat
 
-    until (CloseHandle(ServSocketHandle)<>false);
+    until (CloseHandle(ServSocketHandle)<>false or ServMode=false);
 
    CliSocketHandle:=CreateThread(nil,0,@CliSocketThread,nil,0,CliSocketID);
    DestThreadID:=CliSocketID;
-   DestThreadHandle:=ServSocketHandle;
+   DestThreadHandle:=CliSocketHandle;
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
@@ -1126,7 +1122,7 @@ begin
    button2.Enabled:=false;
    button1.Enabled:=true;
    repeat
-   until (CloseHandle(CliSocketHandle)<>false);
+   until (CloseHandle(CliSocketHandle)<>false or ServMode=true);
 
    ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
    DestThreadID:=ServSocketID;
@@ -1212,7 +1208,7 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
   if fileexists('tmp.bat') then
   deletefile('tmp.bat');
-  ServMode:=true;
+  ServMode:=false;
   //ReadyToDraw:=false;
   ComboBox1.Text:='10';
   SetBtn4(BTN4_IDLE);
@@ -1224,7 +1220,7 @@ begin
   PointInfo.oppo:=0;
   ServSocketHandle:=CreateThread(nil,0,@ServSocketThread,nil,0,ServSocketID);
   DestThreadID:=ServSocketID;
-
+  ServMode:=true;
 end;
 
 end.

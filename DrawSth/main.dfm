@@ -32,15 +32,15 @@ object Form1: TForm1
     Caption = 'Key:'
   end
   object Label3: TLabel
-    Left = 438
-    Top = 95
-    Width = 235
-    Height = 28
+    Left = 414
+    Top = 113
+    Width = 129
+    Height = 16
     Caption = 'INFORMATIONS HERE!'
     Color = clRed
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clRed
-    Font.Height = -23
+    Font.Height = -13
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentColor = False
